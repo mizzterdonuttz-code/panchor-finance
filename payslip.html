@@ -81,9 +81,12 @@ table.main tr:hover td{background:#f5f8fd;}
 <body>
 
 <div class="topbar no-print">
-  <div>
-    <h1>📋 ระบบใบเงินเดือนพลทหารกองประจำการ</h1>
-    <p id="topbarSub">กำลังโหลดข้อมูล...</p>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="/" style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:999px;padding:5px 12px;font-size:13px;text-decoration:none;white-space:nowrap;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">← เมนูหลัก</a>
+    <div>
+      <h1>📋 ระบบใบเงินเดือนพลทหารกองประจำการ</h1>
+      <p id="topbarSub">กำลังโหลดข้อมูล...</p>
+    </div>
   </div>
   <div class="topbar-right">
     
@@ -1371,7 +1374,7 @@ body{font-family:'TH Sarabun PSK','Sarabun',sans-serif;background:#fff;}
 .data-td{text-align:right;padding:4px 10px;}
 .data-center{text-align:center;padding:4px 8px;}
 @media print{body{margin:0;}.slip-page{padding:5mm 8mm;}}
-</style></head><body><div id="__back_btn" style="position:fixed;top:12px;left:12px;z-index:99999;"><a href="/" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #ddd;border-radius:999px;padding:6px 14px;font-family:Sarabun,sans-serif;font-size:14px;color:#333;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">← เมนูหลัก</a></div>
+</style></head><body>
 ${slips.map(s=>`<div class="slip-page">${s}</div>`).join('')}
 <script>window.onload=function(){setTimeout(()=>window.print(),600);}<\/script>
 </body></html>`);
@@ -1678,6 +1681,8 @@ function updateBia(sid, field, val, ym, p){
     if(cells[6]) cells[6].textContent=fmt(food);
     if(cells[8]) cells[8].textContent=fmt(earn-food-extra2);
   }
+  // auto-save หลังแก้เบี้ยเลี้ยง
+  saveToStorage();
 }
 
 function exportBiaExcel(type){
