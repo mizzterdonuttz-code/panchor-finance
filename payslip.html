@@ -348,7 +348,7 @@ function importData(input){
 
 /* ===== GITHUB SYNC ===== */
 const GH_KEY = 'gh_config';
-const GH_FIXED = { token:'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', user:'wuv065', repo:'panchor-finance', file:'payslip_data.json' };
+const GH_FIXED = { token:'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', user:'mizzterdonuttz-code', repo:'panchor-finance', file:'payslip_data.json' };
 
 function getGhConfig(){
   return GH_FIXED;
@@ -432,7 +432,7 @@ async function syncToGithub(silent=false){
   const btn = document.getElementById('syncBtn');
   if(btn){ btn.textContent='⏳ Syncing...'; btn.disabled=true; }
   try{
-    const data = JSON.stringify({monthsData, activeYYYYMM}, null, 2);
+    const data = JSON.stringify({monthsData, activeYYYYMM, biaData}, null, 2);
     // ใช้ loop แทน spread เพื่อป้องกัน call stack overflow กับข้อมูลขนาดใหญ่
     const enc = new TextEncoder().encode(data);
     let binary = '';
@@ -475,11 +475,13 @@ async function loadFromGithub(){
     });
     if(!r.ok) return false;
     const j = await r.json();
-    const bytes=atob(j.content.replace(/\n/g,''));const arr=new Uint8Array(bytes.length);for(let i=0;i<bytes.length;i++)arr[i]=bytes.charCodeAt(i);const decoded=new TextDecoder().decode(arr);
+    const bytes = Uint8Array.from(atob(j.content.replace(/\n/g,'')), c => c.charCodeAt(0));
+    const decoded = new TextDecoder('utf-8').decode(bytes);
     const parsed = JSON.parse(decoded);
     if(!parsed.monthsData||Object.keys(parsed.monthsData).length===0) return false;
     // GitHub เป็น source of truth เสมอ — overwrite ทุกกรณี
     monthsData=parsed.monthsData;
+    if(parsed.biaData) biaData = parsed.biaData;
     saveToStorage();
     const ym = parsed.activeYYYYMM||Object.keys(monthsData).sort().pop();
     setActiveMonth(ym, false);
@@ -504,7 +506,7 @@ function updateSyncBtn(){
 
 let _syncTimer = null;
 function saveToStorage(autoSync=true){
-  try{ localStorage.setItem(LS_KEY, JSON.stringify({monthsData, activeYYYYMM})); }catch(e){}
+  try{ localStorage.setItem(LS_KEY, JSON.stringify({monthsData, activeYYYYMM, biaData})); }catch(e){}
   // Auto sync ขึ้น GitHub (debounce 3 วินาที)
   if(autoSync && getGhConfig().token){
     clearTimeout(_syncTimer);
@@ -520,6 +522,7 @@ function loadFromStorage(){
     const parsed = JSON.parse(raw);
     if(!parsed.monthsData||Object.keys(parsed.monthsData).length===0) return false;
     monthsData = parsed.monthsData;
+    if(parsed.biaData) biaData = parsed.biaData;
     const ym = parsed.activeYYYYMM||Object.keys(monthsData).sort().pop();
     setActiveMonth(ym, false);
     renderMonthSelect();
