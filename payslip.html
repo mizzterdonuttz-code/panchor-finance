@@ -478,13 +478,8 @@ async function loadFromGithub(){
     const bytes=atob(j.content.replace(/\n/g,''));const arr=new Uint8Array(bytes.length);for(let i=0;i<bytes.length;i++)arr[i]=bytes.charCodeAt(i);const decoded=new TextDecoder().decode(arr);
     const parsed = JSON.parse(decoded);
     if(!parsed.monthsData||Object.keys(parsed.monthsData).length===0) return false;
-    if(Object.keys(monthsData).length>0){
-      Object.keys(parsed.monthsData).forEach(ym=>{
-        if(!monthsData[ym]) monthsData[ym]=parsed.monthsData[ym];
-      });
-    } else {
-      monthsData=parsed.monthsData;
-    }
+    // GitHub เป็น source of truth เสมอ — overwrite ทุกกรณี
+    monthsData=parsed.monthsData;
     saveToStorage();
     const ym = parsed.activeYYYYMM||Object.keys(monthsData).sort().pop();
     setActiveMonth(ym, false);

@@ -444,19 +444,24 @@ async function ghDebtGet(file) {
       { headers:{ Authorization:'token '+GH.token, Accept:'application/vnd.github.v3+json' }});
     if(!r.ok) return null;
     var j = await r.json();
-    return { data: JSON.parse(atob(j.content.replace(/\n/g,''))), sha: j.sha };
-  } catch(e) { return null; }
+    var bytes = Uint8Array.from(atob(j.content.replace(/\n/g,'')), function(c){return c.charCodeAt(0);});
+    var text = new TextDecoder('utf-8').decode(bytes);
+    return { data: JSON.parse(text), sha: j.sha };
+  } catch(e) { console.error('ghDebtGet error:', e); return null; }
 }
 async function ghDebtPut(file, data, sha) {
   try {
-    var content = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+    var text = JSON.stringify(data);
+    var bytes = new TextEncoder().encode(text);
+    var binary = Array.from(bytes).map(function(b){return String.fromCharCode(b);}).join('');
+    var content = btoa(binary);
     var body = { message:'update '+file, content: content };
     if(sha) body.sha = sha;
     var r = await fetch('https://api.github.com/repos/'+GH.user+'/'+GH.repo+'/contents/'+file,
       { method:'PUT', headers:{ Authorization:'token '+GH.token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
     var j = await r.json();
-    return j.content ? j.content.sha : null;
-  } catch(e) { return null; }
+    return (j.content && j.content.sha) ? j.content.sha : null;
+  } catch(e) { console.error('ghDebtPut error:', e); return null; }
 }
 
 async function applyLabels() {
