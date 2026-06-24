@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบงานการเงิน พัน.ช.คมศ.พล.ช.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', 'TH Sarabun PSK', sans-serif;
+    background: #f5f4f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .portal {
+    width: 100%;
+    max-width: 680px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .emblem {
+    width: 72px;
+    height: 72px;
+    background: #1a3a5c;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 32px;
+  }
+  .unit-badge {
+    display: inline-block;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 999px;
+    font-size: 13px;
+    color: #666;
+    padding: 4px 16px;
+    margin-bottom: 10px;
+    letter-spacing: 0.02em;
+  }
+  .main-title {
+    font-size: 26px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+  .sub-title {
+    font-size: 15px;
+    color: #888;
+  }
+
+  /* App grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 2rem;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid #e8e6e0;
+    border-radius: 14px;
+    padding: 1.5rem 1.25rem;
+    text-decoration: none;
+    display: block;
+    transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+    cursor: pointer;
+  }
+  .card:hover {
+    border-color: #bbb;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+    transform: translateY(-2px);
+  }
+  .card:active { transform: translateY(0); }
+
+  .icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 14px;
+  }
+  .icon-blue  { background: #e6f1fb; }
+  .icon-teal  { background: #e1f5ee; }
+  .icon-amber { background: #faeeda; }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+  }
+  .card-desc {
+    font-size: 13px;
+    color: #888;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #185fa5;
+    background: #e6f1fb;
+    border-radius: 8px;
+    padding: 5px 12px;
+  }
+  .icon-teal  .card + .card-cta,
+  .card.teal  .card-cta { background: #e1f5ee; color: #0f6e56; }
+  .card.amber .card-cta { background: #faeeda; color: #854f0b; }
+
+  /* Divider */
+  hr { border: none; border-top: 1px solid #e8e6e0; margin: 1.5rem 0; }
+
+  /* Host section */
+  .section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #999;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .host-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 2rem;
+  }
+  .host-card {
+    background: #fff;
+    border: 1px solid #e8e6e0;
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .host-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .star-badge {
+    font-size: 10px;
+    background: #faeeda;
+    color: #854f0b;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-weight: 500;
+  }
+  .host-tag { font-size: 12px; color: #999; }
+  .host-link {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #185fa5;
+    text-decoration: none;
+  }
+  .host-link:hover { text-decoration: underline; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    font-size: 12px;
+    color: #bbb;
+    padding-top: 1rem;
+    border-top: 1px solid #e8e6e0;
+  }
+
+  /* Dark mode */
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1a1a; }
+    .card, .host-card { background: #242424; border-color: #333; }
+    .card:hover { border-color: #555; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+    .main-title, .card-title, .host-name { color: #f0f0f0; }
+    .sub-title, .card-desc, .host-tag, .unit-badge { color: #777; }
+    .unit-badge { background: #242424; border-color: #333; }
+    hr, .footer { border-color: #333; }
+    .emblem { background: #0f2740; }
+    .icon-blue  { background: #0c2a42; }
+    .icon-teal  { background: #053420; }
+    .icon-amber { background: #3a2205; }
+    .card-cta   { background: #0c2a42; color: #5aabf5; }
+    .card.teal  .card-cta { background: #053420; color: #3ec99a; }
+    .card.amber .card-cta { background: #3a2205; color: #f0a93a; }
+    .footer { color: #555; }
+  }
+</style>
+</head>
+<body>
+
+<div class="portal">
+
+  <div class="header">
+    <div class="emblem">⚙️</div>
+    <div class="unit-badge">พัน.ช.คมศ.พล.ช.</div>
+    <div class="main-title">ระบบงานการเงิน</div>
+    <div class="sub-title">กองพันทหารช่างเครื่องมือพิเศษ กองพลทหารช่าง</div>
+  </div>
+
+  <div class="grid">
+
+    <a class="card" href="payslip.html">
+      <div class="icon-wrap icon-blue">💰</div>
+      <div class="card-title">ระบบเงินเดือน</div>
+      <div class="card-desc">จัดการเงินเดือน เบี้ยเลี้ยง และพิมพ์ใบรับรองเงินเดือนกำลังพล</div>
+      <span class="card-cta">เปิดระบบ →</span>
+    </a>
+
+    <a class="card teal" href="bank.html">
+      <div class="icon-wrap icon-teal">🏦</div>
+      <div class="card-title">ค้นหาบัญชีธนาคาร</div>
+      <div class="card-desc">ค้นหาและจัดการข้อมูลบัญชีธนาคารของกำลังพลทุกนาย</div>
+      <span class="card-cta" style="background:#e1f5ee;color:#0f6e56;">เปิดระบบ →</span>
+    </a>
+
+    <a class="card amber" href="debt.html">
+      <div class="icon-wrap icon-amber">📊</div>
+      <div class="card-title">วิเคราะห์หนี้สหกรณ์</div>
+      <div class="card-desc">วิเคราะห์และจัดทำแบบฟอร์มภาระหนี้สินสหกรณ์ออมทรัพย์</div>
+      <span class="card-cta" style="background:#faeeda;color:#854f0b;">เปิดระบบ →</span>
+    </a>
+
+  </div>
+
+  <hr>
+
+  <div class="section-label">แนะนำบริการ Host ฟรี</div>
+  <div class="host-grid">
+    <div class="host-card">
+      <div class="host-name">Netlify <span class="star-badge">⭐ แนะนำ</span></div>
+      <div class="host-tag">ลากวางไฟล์ได้เลย ไม่ต้องสมัคร Git</div>
+      <a class="host-link" href="https://netlify.com" target="_blank">→ netlify.com</a>
+    </div>
+    <div class="host-card">
+      <div class="host-name">GitHub Pages</div>
+      <div class="host-tag">เสถียร ฟรี custom domain ได้</div>
+      <a class="host-link" href="https://pages.github.com" target="_blank">→ pages.github.com</a>
+    </div>
+    <div class="host-card">
+      <div class="host-name">Vercel</div>
+      <div class="host-tag">เร็วมาก UI สวย deploy ง่าย</div>
+      <a class="host-link" href="https://vercel.com" target="_blank">→ vercel.com</a>
+    </div>
+    <div class="host-card">
+      <div class="host-name">Cloudflare Pages</div>
+      <div class="host-tag">เสถียรมาก ระดับองค์กร</div>
+      <a class="host-link" href="https://pages.cloudflare.com" target="_blank">→ pages.cloudflare.com</a>
+    </div>
+  </div>
+
+  <div class="footer">ระบบงานการเงิน พัน.ช.คมศ.พล.ช. &nbsp;|&nbsp; พัฒนาด้วย Claude AI &nbsp;|&nbsp; ปรับปรุง 2568</div>
+
+</div>
+
+</body>
+</html>

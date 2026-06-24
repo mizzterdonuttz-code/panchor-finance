@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>แบบวิเคราะห์ภาระหนี้สิน</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+<style>
+@font-face { font-family:'THSarabunPSK'; src:local('TH Sarabun PSK'),local('THSarabunPSK'),local('TH SarabunPSK'); }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'TH Sarabun PSK','THSarabunPSK','Sarabun','TH Sarabun New',sans-serif; font-size:17px; background:#eee; }
+
+/* Toolbar */
+#toolbar { background:#1a3a6b; color:#fff; padding:6px 14px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+#toolbar span.t { flex:1; font-size:13px; }
+#toolbar button { background:#fff; color:#1a3a6b; border:none; padding:5px 12px; border-radius:3px; cursor:pointer; font-family:inherit; font-weight:bold; font-size:12px; }
+#toolbar button:hover { background:#e3f2fd; }
+#save-status { font-size:11px; color:#a5d6a7; min-width:90px; }
+
+/* Search panel */
+#search-panel { background:#f5f5f5; border-bottom:2px solid #1a3a6b; padding:8px 14px; display:none; }
+#search-panel input { width:280px; padding:5px 9px; font-family:inherit; font-size:14px; border:1px solid #aaa; border-radius:3px; }
+#search-results { margin-top:6px; max-height:180px; overflow-y:auto; }
+.result-item { padding:5px 10px; cursor:pointer; border-bottom:1px solid #ddd; font-size:14px; display:flex; gap:12px; align-items:center; }
+.result-item:hover { background:#e3f2fd; }
+.result-item .r-name { font-weight:bold; flex:1; }
+.result-item .r-date { color:#888; font-size:12px; }
+.result-item button { font-size:12px; padding:2px 8px; cursor:pointer; font-family:inherit; }
+
+/* Edit modal */
+#edit-modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.55); z-index:999; overflow-y:auto; }
+#edit-box { background:#fff; width:540px; margin:24px auto 40px; border-radius:6px; overflow:hidden; }
+#edit-box h3 { background:#1a3a6b; color:#fff; padding:10px 16px; font-size:16px; }
+#edit-body { padding:14px 16px; max-height:70vh; overflow-y:auto; }
+.edit-group { margin-bottom:14px; }
+.edit-group h4 { font-size:14px; color:#1a3a6b; border-bottom:1px solid #c5cae9; margin-bottom:6px; padding-bottom:2px; }
+.edit-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.edit-row label { font-size:13px; color:#555; min-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.edit-row input { flex:1; padding:4px 8px; font-family:inherit; font-size:14px; border:1px solid #aaa; border-radius:3px; }
+#edit-footer { padding:10px 16px; background:#f5f5f5; display:flex; gap:8px; justify-content:flex-end; border-top:1px solid #ddd; }
+#edit-footer button { padding:6px 18px; font-family:inherit; font-size:14px; border-radius:3px; cursor:pointer; border:none; font-weight:bold; }
+#btn-apply { background:#1a3a6b; color:#fff; }
+#btn-apply:hover { background:#1565c0; }
+#btn-cancel { background:#eee; color:#333; }
+
+/* Page */
+.page { width:210mm; background:#fff; margin:10px auto; padding:8mm 10mm; }
+[contenteditable] { outline:none; border-bottom:1px dotted #888; min-width:22px; display:inline-block; cursor:text; }
+[contenteditable]:focus { background:#fffde7; border-bottom:1px solid #1565c0; }
+[contenteditable]:empty::before { content:attr(data-ph); color:#bbb; }
+
+.hrow { display:flex; flex-wrap:wrap; gap:3px 8px; align-items:baseline; margin-bottom:4px; }
+.hrow label { white-space:nowrap; }
+.box { border:1px solid #555; padding:5px 9px; margin-bottom:5px; }
+.box-hd { font-weight:bold; background:#e8eaf6; margin:-5px -9px 5px; padding:3px 9px; border-bottom:1px solid #aaa; font-size:17px; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; border:1px solid #555; margin-bottom:5px; }
+.col { padding:5px 9px; }
+.col:first-child { border-right:1px solid #555; }
+.col-hd { font-weight:bold; background:#e8eaf6; margin:-5px -9px 5px; padding:3px 9px; border-bottom:1px solid #aaa; font-size:17px; }
+.frow { display:flex; align-items:baseline; gap:5px; margin-bottom:4px; }
+.frow label { min-width:138px; white-space:nowrap; }
+.fe { min-width:98px; text-align:right; }
+.fv { min-width:98px; text-align:right; font-weight:bold; color:#1a237e; display:inline-block; }
+.sep { border-top:1px dashed #bbb; margin:4px 0; }
+.sec { font-weight:bold; margin:7px 0 3px; font-size:17px; border-left:3px solid #1a3a6b; padding-left:6px; }
+
+table { width:100%; border-collapse:collapse; font-size:15px; margin-bottom:3px; }
+th, td { border:1px solid #555; padding:3px 4px; }
+th { background:#c5cae9; text-align:center; font-size:15px; }
+td { text-align:center; vertical-align:middle; }
+td.L { text-align:left; } td.R { text-align:right; }
+td > [contenteditable] { width:100%; border-bottom:none; }
+tfoot td { font-weight:bold; background:#e8eaf6; }
+.add-btn { font-size:13px; padding:3px 12px; cursor:pointer; font-family:inherit; background:#e8eaf6; border:1px solid #9fa8da; border-radius:3px; margin-top:3px; }
+.del-btn { border:none; background:none; cursor:pointer; color:#c00; font-size:12px; }
+
+@media print {
+  @page { size:A4 portrait; margin:8mm; }
+  body { background:#fff; font-size:17px; }
+  #toolbar,#search-panel,#edit-modal { display:none !important; }
+  .page { width:100%; margin:0; padding:0; }
+  [contenteditable] { border-bottom-color:transparent; }
+  .add-btn,.del-btn { display:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div id="toolbar">
+  <span class="t">📋 แบบวิเคราะห์ภาระหนี้สิน — สหกรณ์ออมทรัพย์</span>
+  <span id="save-status"></span>
+  <button onclick="openEdit()">✏️ แก้ไขข้อความ</button>
+  <button onclick="toggleSearch()">🔍 ค้นหา</button>
+  <button onclick="exportFile()">📤 ส่งออก</button>
+  <button onclick="document.getElementById('loadFile').click()">📂 นำเข้า</button>
+  <input type="file" id="loadFile" accept=".json" style="display:none" onchange="importFile(event)">
+  <button onclick="window.print()">🖨️ พิมพ์</button>
+  <button onclick="clearForm()">🗑️ ล้าง</button>
+</div>
+
+<!-- Search panel -->
+<div id="search-panel">
+  <input type="text" id="search-input" placeholder="พิมพ์ชื่อหรือเลขสมาชิก..." oninput="doSearch(this.value)">
+  <div id="search-results"></div>
+</div>
+
+<!-- Edit modal -->
+<div id="edit-modal" onclick="if(event.target===this)closeEdit()">
+  <div id="edit-box">
+    <h3>✏️ แก้ไขข้อความในฟอร์ม</h3>
+    <div id="edit-body"></div>
+    <div id="edit-footer">
+      <button id="btn-cancel" onclick="closeEdit()">ยกเลิก</button>
+      <button id="btn-apply" onclick="applyLabels()">✓ บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- Page -->
+<div class="page">
+
+  <div class="box">
+    <div class="box-hd" data-label="hd-borrower">ข้อมูลผู้กู้</div>
+    <div class="hrow">
+      <label data-label="lbl-name">ยศ/ชื่อ–สกุล</label>
+      <span contenteditable data-ph="ยศ ชื่อ–สกุล" data-key="name" style="min-width:180px;"></span>
+      <label data-label="lbl-member">เลขสมาชิก</label>
+      <span contenteditable data-ph="0000" data-key="member-no" style="min-width:60px;"></span>
+    </div>
+    <div class="hrow">
+      <label data-label="lbl-pos">ตำแหน่ง / สังกัด</label>
+      <span contenteditable data-ph="ตำแหน่ง" data-key="position" style="min-width:140px;"></span>
+      <span contenteditable data-ph="หน่วย/สังกัด" data-key="unit" style="min-width:140px;"></span>
+    </div>
+    <div class="hrow">
+      <label data-label="lbl-loantype">ประเภทเงินกู้</label>
+      <span contenteditable data-ph="สามัญ / ฉุกเฉิน / พิเศษ" data-key="loan-type" style="min-width:120px;"></span>
+      <label data-label="lbl-loanamt">วงเงินที่ขอกู้</label>
+      <span contenteditable data-ph="0.00" data-key="loan-amt" data-money="1" class="fe"></span>
+      <label>บาท  ผ่อน</label>
+      <span contenteditable data-ph="0" data-key="loan-inst" style="min-width:35px;text-align:right;"></span>
+      <label>งวด /</label>
+      <span contenteditable data-ph="0" data-key="loan-yr" style="min-width:35px;text-align:right;"></span>
+      <label>ปี</label>
+      <label data-label="lbl-deduct" style="margin-left:10px;">ยอดหัก/เดือน</label>
+      <span contenteditable data-ph="0.00" data-key="f-new" data-money="1" id="f-new" class="fe"></span>
+      <label>บาท</label>
+    </div>
+    <div class="hrow">
+      <label data-label="lbl-purpose">วัตถุประสงค์</label>
+      <span contenteditable data-ph="ปรับโครงสร้างหนี้ / ทุนการศึกษา / อื่นๆ" data-key="purpose" style="min-width:300px;"></span>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="col">
+      <div class="col-hd" data-label="hd-family">ข้อมูลครอบครัว</div>
+      <div class="frow"><label data-label="lbl-status">สถานภาพ</label>
+        <span contenteditable data-ph="โสด / สมรส" data-key="status" class="fe"></span></div>
+      <div class="frow"><label data-label="lbl-spouse">ชื่อ–สกุล คู่สมรส</label>
+        <span contenteditable data-ph="ชื่อ–สกุล" data-key="spouse-name" style="min-width:115px;"></span></div>
+      <div class="frow"><label data-label="lbl-spwork">ที่ทำงานคู่สมรส</label>
+        <span contenteditable data-ph="สถานที่ทำงาน" data-key="spouse-work" style="min-width:115px;"></span></div>
+      <div class="frow"><label data-label="lbl-spinc">รายได้คู่สมรส</label>
+        <span contenteditable data-ph="0.00" data-key="spouse-income" data-money="1" class="fe"></span>
+        <label>บาท/เดือน</label></div>
+      <div class="frow"><label data-label="lbl-child">จำนวนบุตร</label>
+        <span contenteditable data-ph="0" data-key="children" style="min-width:32px;text-align:right;"></span>
+        <label>คน</label></div>
+    </div>
+
+    <div class="col">
+      <div class="col-hd">
+        <span data-label="hd-finance">บิลเงินเดือนของเดือน</span>
+        <span contenteditable data-ph="มิ.ย." data-key="fin-month" style="min-width:36px;"></span>
+        พ.ศ. <span contenteditable data-ph="2568" data-key="fin-year" style="min-width:42px;"></span>
+      </div>
+      <div class="frow"><label data-label="lbl-sal">เงินเดือน</label>
+        <span contenteditable data-ph="0.00" data-key="f-sal" data-money="1" id="f-sal" class="fe"></span>
+        <label>บาท</label></div>
+      <div class="sep"></div>
+      <div class="frow"><label data-label="lbl-old">ยอดหักเดิม</label>
+        <span contenteditable data-ph="0.00" data-key="f-old" data-money="1" id="f-old" class="fe"></span>
+        <label>บาท</label></div>
+      <div class="frow"><label data-label="lbl-new">+ ยอดหักใหม่</label>
+        <span class="fv" id="d-new">0.00</span>
+        <label>บาท <span style="color:#888;font-size:12px;">(จากข้อมูลผู้กู้)</span></label></div>
+      <div class="frow"><label data-label="lbl-red">− ยอดที่จะลด</label>
+        <span contenteditable data-ph="0.00" data-key="f-red" data-money="1" id="f-red" class="fe"></span>
+        <label>บาท</label></div>
+      <div class="sep"></div>
+      <div class="frow"><label data-label="lbl-net">ยอดหักสุทธิใหม่</label>
+        <span class="fv" id="r-net">0.00</span><label>บาท</label></div>
+      <div class="frow"><label data-label="lbl-rem">คงเหลือสุทธิ</label>
+        <span class="fv" id="r-rem">0.00</span><label>บาท</label></div>
+      <div class="sep"></div>
+      <div class="frow" style="color:#555;"><label data-label="lbl-p30">30% เงินเดือน</label>
+        <span id="r-p30" style="min-width:95px;text-align:right;display:inline-block;">0.00</span>
+        <label>บาท</label></div>
+    </div>
+  </div>
+
+  <!-- ตารางรายการใช้เงิน -->
+  <div class="sec" data-label="sec-debt">รายการใช้เงิน</div>
+  <table>
+    <thead>
+      <tr>
+        <th rowspan="2" style="width:22%;"><span data-label="th-d0">ชื่อ–สกุล / รายการหนี้สิน</span></th>
+        <th rowspan="2" style="width:15%;"><span data-label="th-d1">ยอดเงิน</span></th>
+        <th colspan="4"><span data-label="th-d-guar">ข้อมูลคนค้ำประกัน</span></th>
+        <th rowspan="2" style="width:4%;"></th>
+      </tr>
+      <tr>
+        <th style="width:19%;"><span data-label="th-d2">ชื่อคนค้ำ</span></th>
+        <th style="width:12%;"><span data-label="th-d3">เงินเดือน</span></th>
+        <th style="width:12%;"><span data-label="th-d4">เหลือรับ</span></th>
+        <th style="width:12%;"><span data-label="th-d5">ส่วนต่าง 30%</span></th>
+      </tr>
+    </thead>
+    <tbody id="debt-body"></tbody>
+    <tfoot>
+      <tr>
+        <td class="R">รวม</td>
+        <td id="t-balance" class="R">0.00</td>
+        <td colspan="4"></td><td></td>
+      </tr>
+    </tfoot>
+  </table>
+  <button class="add-btn" onclick="addDebt()">+ เพิ่มรายการ</button>
+
+  <!-- หนี้ในระบบ -->
+  <div class="sec" style="margin-top:7px;" data-label="sec-in">รายละเอียดหนี้ในระบบ (สหกรณ์ / สถาบันการเงิน)</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:20%;"><span data-label="th-i0">ชื่อ–สกุล ผู้กู้</span></th>
+        <th style="width:14%;"><span data-label="th-i1">วงเงินต้น (บาท)</span></th>
+        <th style="width:12%;"><span data-label="th-i2">วันที่กู้</span></th>
+        <th style="width:10%;"><span data-label="th-i3">จำนวนงวด</span></th>
+        <th style="width:10%;"><span data-label="th-i4">ผ่อนรายเดือน</span></th>
+        <th style="width:16%;"><span data-label="th-i5">ยอดค้างชำระ (บาท)</span></th>
+        <th style="width:14%;"><span data-label="th-i6">หมายเหตุ</span></th>
+        <th style="width:4%;"></th>
+      </tr>
+    </thead>
+    <tbody id="in-body"></tbody>
+    <tfoot>
+      <tr><td class="R" colspan="5">รวม</td>
+        <td class="R" id="t-in">0.00</td><td></td><td></td></tr>
+    </tfoot>
+  </table>
+  <button class="add-btn" onclick="addIn()">+ เพิ่มรายการ</button>
+
+  <!-- หนี้นอกระบบ -->
+  <div class="sec" style="margin-top:7px;" data-label="sec-out">รายละเอียดหนี้นอกระบบ / ทุนการศึกษา</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:20%;"><span data-label="th-o0">ชื่อ–สกุล เจ้าหนี้</span></th>
+        <th style="width:14%;"><span data-label="th-o1">วงเงินต้น (บาท)</span></th>
+        <th style="width:12%;"><span data-label="th-o2">วันที่กู้</span></th>
+        <th style="width:10%;"><span data-label="th-o3">จำนวนงวด</span></th>
+        <th style="width:10%;"><span data-label="th-o4">ผ่อนแล้ว</span></th>
+        <th style="width:16%;"><span data-label="th-o5">ยอดค้างชำระ (บาท)</span></th>
+        <th style="width:14%;"><span data-label="th-o6">ประเภท</span></th>
+        <th style="width:4%;"></th>
+      </tr>
+    </thead>
+    <tbody id="out-body"></tbody>
+    <tfoot>
+      <tr><td class="R" colspan="5">รวม</td>
+        <td class="R" id="t-out">0.00</td><td></td><td></td></tr>
+    </tfoot>
+  </table>
+  <button class="add-btn" onclick="addOut()">+ เพิ่มรายการ</button>
+
+</div>
+
+<script>
+var fmt   = n => isNaN(n)?'0.00':n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+var raw   = el => parseFloat((el.innerText||'').replace(/,/g,''))||0;
+var getEl = id => document.getElementById(id);
+var setSt = msg => { getEl('save-status').innerText = msg; };
+
+// ---- money blur format ----
+document.addEventListener('blur', function(e) {
+  var el = e.target;
+  if (el.contentEditable==='true' && el.dataset.money) {
+    var n = parseFloat((el.innerText||'').replace(/,/g,''));
+    if (!isNaN(n)) el.innerText = fmt(n);
+  }
+  if (el.contentEditable==='true') { recalcAll(); scheduleAutoSave(); }
+}, true);
+document.addEventListener('input', function(e) {
+  if (e.target.contentEditable==='true' && !e.target.dataset.money) { recalcAll(); scheduleAutoSave(); }
+}, true);
+
+// ---- finance calc ----
+function calc() {
+  var sal=raw(getEl('f-sal')), old=raw(getEl('f-old'));
+  var nw=raw(getEl('f-new')), red=raw(getEl('f-red'));
+  var net=old+nw-red;
+  getEl('d-new').innerText=fmt(nw);
+  getEl('r-net').innerText=fmt(net);
+  getEl('r-rem').innerText=fmt(sal-net);
+  getEl('r-p30').innerText=fmt(sal*0.30);
+}
+function calcGuar(sSal,sRem,sDiff) {
+  var sal=parseFloat((sSal.innerText||'').replace(/,/g,''))||0;
+  var rem=parseFloat((sRem.innerText||'').replace(/,/g,''))||0;
+  if (!sal&&!rem){sDiff.innerText='';return;}
+  var d=rem-sal*0.30;
+  sDiff.innerText=fmt(d);
+  sDiff.style.color=d>=0?'#1b5e20':'#b71c1c';
+}
+function sumCol(bodyId,idx,totalId) {
+  var tot=0;
+  document.querySelectorAll('#'+bodyId+' tr').forEach(function(r){
+    var sp=r.querySelectorAll('span[contenteditable]');
+    tot+=parseFloat((sp[idx]?.innerText||'').replace(/,/g,''))||0;
+  });
+  getEl(totalId).innerText=fmt(tot);
+}
+function recalcAll() {
+  calc();
+  sumCol('debt-body',1,'t-balance');
+  sumCol('in-body',5,'t-in');
+  sumCol('out-body',5,'t-out');
+  document.querySelectorAll('#debt-body tr').forEach(function(r){
+    if (r._guar) calcGuar(r._guar.sal,r._guar.rem,r._guar.diff);
+  });
+}
+
+// ---- table helpers ----
+function edTd(cls){var td=document.createElement('td');if(cls)td.className=cls;var s=document.createElement('span');s.contentEditable=true;s.dataset.ph='';td.appendChild(s);return td;}
+function moneyTd(){var td=document.createElement('td');td.className='R';var s=document.createElement('span');s.contentEditable=true;s.dataset.ph='0.00';s.dataset.money='1';td.appendChild(s);return td;}
+function delTd(fn){var td=document.createElement('td');var b=document.createElement('button');b.className='del-btn';b.innerText='✕';b.onclick=fn;td.appendChild(b);return td;}
+
+function addDebt(vals) {
+  var tr=document.createElement('tr');
+  var tdBal=moneyTd(),tdSal=moneyTd(),tdRem=moneyTd();
+  var tdDiff=document.createElement('td');tdDiff.className='R';
+  var sDiff=document.createElement('span');sDiff.style.fontWeight='bold';tdDiff.appendChild(sDiff);
+  var sSal=tdSal.querySelector('span'),sRem=tdRem.querySelector('span');
+  tr._guar={sal:sSal,rem:sRem,diff:sDiff};
+  sSal.oninput=sRem.oninput=function(){calcGuar(sSal,sRem,sDiff);};
+  [edTd('L'),tdBal,edTd('L'),tdSal,tdRem,tdDiff,
+   delTd(function(){tr.remove();recalcAll();scheduleAutoSave();})]
+    .forEach(function(td){tr.appendChild(td);});
+  getEl('debt-body').appendChild(tr);
+  if (vals){var sp=tr.querySelectorAll('span[contenteditable]');vals.forEach(function(v,i){if(sp[i])sp[i].innerText=v;});calcGuar(sSal,sRem,sDiff);}
+}
+function addIn(vals) {
+  var tr=document.createElement('tr');
+  [edTd('L'),moneyTd(),edTd(),edTd(),moneyTd(),moneyTd(),edTd('L'),
+   delTd(function(){tr.remove();sumCol('in-body',5,'t-in');scheduleAutoSave();})]
+    .forEach(function(td){tr.appendChild(td);});
+  getEl('in-body').appendChild(tr);
+  if (vals){var sp=tr.querySelectorAll('span[contenteditable]');vals.forEach(function(v,i){if(sp[i])sp[i].innerText=v;});}
+}
+function addOut(vals) {
+  var tr=document.createElement('tr');
+  [edTd('L'),moneyTd(),edTd(),edTd(),moneyTd(),moneyTd(),edTd('L'),
+   delTd(function(){tr.remove();sumCol('out-body',5,'t-out');scheduleAutoSave();})]
+    .forEach(function(td){tr.appendChild(td);});
+  getEl('out-body').appendChild(tr);
+  if (vals){var sp=tr.querySelectorAll('span[contenteditable]');vals.forEach(function(v,i){if(sp[i])sp[i].innerText=v;});}
+}
+
+// ---- collect / restore ----
+function collectData() {
+  var fields={};
+  document.querySelectorAll('[data-key]').forEach(function(el){fields[el.dataset.key]=el.innerText;});
+  var getRows=function(id){var rows=[];document.querySelectorAll('#'+id+' tr').forEach(function(r){var v=[];r.querySelectorAll('span[contenteditable]').forEach(function(s){v.push(s.innerText);});rows.push(v);});return rows;};
+  return {fields:fields,debtRows:getRows('debt-body'),inRows:getRows('in-body'),outRows:getRows('out-body')};
+}
+function restoreData(data) {
+  if (data.fields) Object.keys(data.fields).forEach(function(k){var el=document.querySelector('[data-key="'+k+'"]');if(el)el.innerText=data.fields[k];});
+  getEl('debt-body').innerHTML=''; getEl('in-body').innerHTML=''; getEl('out-body').innerHTML='';
+  (data.debtRows||[]).forEach(function(v){addDebt(v);});
+  (data.inRows||[]).forEach(function(v){addIn(v);});
+  (data.outRows||[]).forEach(function(v){addOut(v);});
+  recalcAll();
+}
+
+// ---- labels: collect & apply ----
+function getLabels() {
+  var obj={};
+  document.querySelectorAll('[data-label]').forEach(function(el){obj[el.dataset.label]=el.innerText.trim();});
+  return obj;
+}
+function applyLabelObj(obj) {
+  Object.keys(obj).forEach(function(k){
+    var el=document.querySelector('[data-label="'+k+'"]');
+    if (el) el.innerText=obj[k];
+  });
+}
+
+// ---- edit modal ----
+// กลุ่มที่แสดงใน modal
+var LABEL_GROUPS = [
+  { title:'ข้อมูลผู้กู้', keys:['hd-borrower','lbl-name','lbl-member','lbl-pos','lbl-loantype','lbl-loanamt','lbl-deduct','lbl-purpose'] },
+  { title:'ข้อมูลครอบครัว', keys:['hd-family','lbl-status','lbl-spouse','lbl-spwork','lbl-spinc','lbl-child'] },
+  { title:'การคำนวณยึดหัก', keys:['hd-finance','lbl-sal','lbl-old','lbl-new','lbl-red','lbl-net','lbl-rem','lbl-p30'] },
+  { title:'ตารางรายการใช้เงิน', keys:['sec-debt','th-d0','th-d1','th-d-guar','th-d2','th-d3','th-d4','th-d5'] },
+  { title:'ตารางหนี้ในระบบ', keys:['sec-in','th-i0','th-i1','th-i2','th-i3','th-i4','th-i5','th-i6'] },
+  { title:'ตารางหนี้นอกระบบ', keys:['sec-out','th-o0','th-o1','th-o2','th-o3','th-o4','th-o5','th-o6'] },
+];
+
+function openEdit() {
+  var current = getLabels();
+  var html = '';
+  LABEL_GROUPS.forEach(function(g) {
+    html += '<div class="edit-group"><h4>' + g.title + '</h4>';
+    g.keys.forEach(function(k) {
+      var val = (current[k]||'').replace(/"/g,'&quot;');
+      html += '<div class="edit-row">'
+        + '<label title="' + k + '">' + (current[k]||k) + '</label>'
+        + '<input data-edit-key="' + k + '" value="' + val + '">'
+        + '</div>';
+    });
+    html += '</div>';
+  });
+  getEl('edit-body').innerHTML = html;
+  getEl('edit-modal').style.display = 'block';
+}
+function closeEdit() { getEl('edit-modal').style.display = 'none'; }
+async function applyLabels() {
+  var inputs = document.querySelectorAll('[data-edit-key]');
+  var obj = {};
+  inputs.forEach(function(inp) { obj[inp.dataset.editKey] = inp.value; });
+  applyLabelObj(obj);
+  closeEdit();
+  // บันทึก labels ลง storage
+  try { await window.storage.set('labels', JSON.stringify(obj)); } catch(e){}
+  setSt('✓ บันทึกแล้ว');
+}
+
+// ---- auto-save ----
+var saveTimer=null;
+function scheduleAutoSave() {
+  clearTimeout(saveTimer); setSt('⏳ กำลังบันทึก...');
+  saveTimer=setTimeout(autoSave,1500);
+}
+async function autoSave() {
+  var nameEl=document.querySelector('[data-key="name"]'), noEl=document.querySelector('[data-key="member-no"]');
+  var name=(nameEl&&nameEl.innerText.trim())||'', no=(noEl&&noEl.innerText.trim())||'';
+  if (!name&&!no){setSt('');return;}
+  var key='rec:'+(no||name), data=collectData();
+  var meta={key:key,name:name,no:no,date:new Date().toLocaleDateString('th-TH')};
+  try {
+    await window.storage.set(key,JSON.stringify(data));
+    await window.storage.set('last-key',key);
+    var idx=[];try{var r=await window.storage.get('idx');if(r)idx=JSON.parse(r.value);}catch(e){}
+    idx=idx.filter(function(i){return i.key!==key;}); idx.unshift(meta);
+    if(idx.length>100)idx=idx.slice(0,100);
+    await window.storage.set('idx',JSON.stringify(idx));
+    setSt('✓ บันทึกแล้ว');
+  } catch(e){setSt('⚠ บันทึกไม่สำเร็จ');}
+}
+
+// ---- search ----
+var searchIdx=[];
+async function loadIndex(){try{var r=await window.storage.get('idx');if(r)searchIdx=JSON.parse(r.value);}catch(e){searchIdx=[];}}
+function toggleSearch(){var p=getEl('search-panel');p.style.display=p.style.display==='none'?'block':'none';if(p.style.display==='block'){loadIndex().then(function(){doSearch('');});getEl('search-input').focus();}}
+function doSearch(q){
+  q=q.trim().toLowerCase();
+  var f=q?searchIdx.filter(function(i){return(i.name+i.no).toLowerCase().includes(q);}):searchIdx;
+  getEl('search-results').innerHTML=f.length===0
+    ?'<div style="padding:6px;color:#888;font-size:13px;">ไม่พบข้อมูล</div>'
+    :f.map(function(i){return '<div class="result-item"><span class="r-name">'+(i.name||'(ไม่มีชื่อ)')+(i.no?' ['+i.no+']':'')+'</span><span class="r-date">'+(i.date||'')+'</span><button onclick="loadRecord(\''+i.key.replace(/'/g,"\\'") +'\')">โหลด</button></div>';}).join('');
+}
+async function loadRecord(key){try{var r=await window.storage.get(key);if(!r){alert('ไม่พบข้อมูล');return;}restoreData(JSON.parse(r.value));getEl('search-panel').style.display='none';setSt('✓ โหลดแล้ว');}catch(e){alert('โหลดไม่สำเร็จ: '+e.message);}}
+
+// ---- export / import ----
+function exportFile(){var data=collectData();var nameEl=document.querySelector('[data-key="name"]');var fname=(nameEl&&nameEl.innerText.trim())||'แบบวิเคราะห์หนี้';var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download=fname+'.json';a.click();}
+function importFile(event){var file=event.target.files[0];if(!file)return;var r=new FileReader();r.onload=function(e){try{restoreData(JSON.parse(e.target.result));setSt('✓ นำเข้าแล้ว');}catch(err){alert('นำเข้าไม่สำเร็จ: '+err.message);};};r.readAsText(file);event.target.value='';}
+
+// ---- clear ----
+function clearForm(){if(!confirm('ล้างข้อมูลทั้งหมด?'))return;document.querySelectorAll('[contenteditable]').forEach(function(el){el.innerText='';});['debt-body','in-body','out-body'].forEach(function(id){getEl(id).innerHTML='';});['d-new','r-net','r-rem','r-p30','t-balance','t-in','t-out'].forEach(function(id){getEl(id).innerText='0.00';});setSt('');init();}
+
+// ---- init ----
+async function init() {
+  addDebt();addDebt();addDebt();addDebt();addDebt();
+  addIn();addIn(); addOut();addOut();
+  // โหลด labels ที่เคยแก้ไว้
+  try{var lb=await window.storage.get('labels');if(lb)applyLabelObj(JSON.parse(lb.value));}catch(e){}
+  // โหลดข้อมูลล่าสุด
+  try{var lk=await window.storage.get('last-key');if(lk){var r=await window.storage.get(lk.value);if(r){getEl('debt-body').innerHTML='';getEl('in-body').innerHTML='';getEl('out-body').innerHTML='';restoreData(JSON.parse(r.value));setSt('✓ โหลดข้อมูลล่าสุด');}}}catch(e){}
+}
+init();
+</script>
+</body>
+</html>

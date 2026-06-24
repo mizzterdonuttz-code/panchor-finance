@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ค้นหาเลขบัญชี</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'TH Sarabun PSK', 'Sarabun', sans-serif; background: #f0f4f8; font-size: 16px; }
+
+/* === TAB === */
+.tab-bar { display: flex; background: #1e3a5f; }
+.tab-btn { flex: 1; padding: 11px; color: #a8c4e0; font-size: 15px; font-family: inherit; background: none; border: none; cursor: pointer; border-bottom: 3px solid transparent; }
+.tab-btn.active { color: #fff; border-bottom: 3px solid #60a5fa; font-weight: bold; }
+.tab-btn:hover:not(.active) { background: #274a73; }
+
+.page { display: none; padding: 16px; }
+.page.active { display: block; }
+
+h2 { color: #1e3a5f; margin-bottom: 12px; font-size: 19px; }
+
+/* === TABLE === */
+table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.1); }
+thead th { background: #1e3a5f; color: #fff; padding: 9px 8px; font-size: 14px; text-align: center; white-space: nowrap; }
+tbody tr { border-bottom: 1px solid #e2ecf5; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #f5f9ff; }
+tbody td { padding: 5px 5px; vertical-align: middle; }
+tfoot td { background: #f5f9ff; padding: 7px 8px; font-weight: bold; font-size: 14px; }
+.total-label { text-align: right; color: #1e3a5f; }
+.total-val { text-align: right; color: #16a34a; }
+
+td input[type=text], td input[type=number], td select {
+  width: 100%; border: 1px solid #c5d5e8; border-radius: 4px;
+  padding: 5px 7px; font-size: 15px; font-family: inherit;
+}
+td input:focus, td select:focus { outline: 2px solid #3b82f6; border-color: #3b82f6; }
+td input[readonly] { background: #f0f4f8; color: #555; }
+
+.td-no  { width: 36px; text-align: center; color: #888; font-size: 13px; }
+.td-name { min-width: 180px; position: relative; }
+.td-acc  { width: 150px; }
+.td-bank { width: 130px; }
+.td-bc   { width: 76px; }
+.td-amt  { width: 120px; }
+.td-act  { width: 36px; text-align: center; }
+
+.btn-del { background: #ef4444; color: #fff; border: none; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; font-size: 16px; }
+.btn-del:hover { background: #dc2626; }
+.btn-edit { background: #f59e0b; color: #fff; border: none; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; font-size: 14px; }
+.btn-edit:hover { background: #d97706; }
+
+/* dropdown */
+.dropdown-box {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: #fff; border: 1px solid #3b82f6; border-radius: 6px;
+  max-height: 200px; overflow-y: auto; z-index: 999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.dropdown-box div { padding: 6px 10px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #f0f0f0; }
+.dropdown-box div:hover { background: #dbeafe; }
+.dropdown-box div:last-child { border-bottom: none; }
+.d-sub { color: #777; font-size: 12px; }
+
+/* controls */
+.controls { margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn { border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-size: 15px; font-family: inherit; }
+.btn-blue  { background: #2563eb; color: #fff; } .btn-blue:hover  { background: #1d4ed8; }
+.btn-green { background: #16a34a; color: #fff; } .btn-green:hover { background: #15803d; }
+.btn-gray  { background: #6b7280; color: #fff; } .btn-gray:hover  { background: #4b5563; }
+.info { font-size: 13px; color: #666; }
+
+/* === DB PAGE === */
+.db-toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+.db-toolbar input[type=text] { border: 1px solid #c5d5e8; border-radius: 6px; padding: 7px 10px; font-size: 15px; font-family: inherit; flex: 1; min-width: 160px; }
+.db-toolbar input:focus { outline: 2px solid #3b82f6; }
+
+/* modal */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+.modal-bg.open { display: flex; }
+.modal { background: #fff; border-radius: 10px; padding: 24px; width: 360px; max-width: 95vw; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+.modal h3 { color: #1e3a5f; margin-bottom: 16px; font-size: 17px; }
+.modal label { display: block; font-size: 13px; color: #555; margin-bottom: 2px; margin-top: 10px; }
+.modal input, .modal select { width: 100%; border: 1px solid #c5d5e8; border-radius: 5px; padding: 7px 9px; font-size: 15px; font-family: inherit; }
+.modal input:focus, .modal select:focus { outline: 2px solid #3b82f6; }
+.modal-btns { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
+
+input[type=number] { -moz-appearance: textfield; text-align: right; }
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.badge-kt { background: #dbeafe; color: #1d4ed8; border-radius: 4px; padding: 1px 7px; font-size: 12px; }
+.badge-ttb { background: #fce7f3; color: #9d174d; border-radius: 4px; padding: 1px 7px; font-size: 12px; }
+.badge-other { background: #f3f4f6; color: #374151; border-radius: 4px; padding: 1px 7px; font-size: 12px; }
+
+.tag-new { background:#dcfce7; color:#166534; border-radius:4px; padding:1px 6px; font-size:11px; margin-left:4px; }
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('search')">🔍 ค้นหา / โอนเงิน</button>
+  <button class="tab-btn" onclick="switchTab('db')">🗂️ จัดการบัญชี</button>
+</div>
+
+<!-- ===== PAGE: SEARCH ===== -->
+<div id="page-search" class="page active">
+  <h2>ค้นหาเลขบัญชี พัน.ช.คมศ.</h2>
+  <table id="tbl">
+    <thead>
+      <tr>
+        <th class="td-no">#</th>
+        <th class="td-name">ชื่อ / ค้นหา</th>
+        <th class="td-acc">เลขบัญชี</th>
+        <th class="td-bank">ธนาคาร</th>
+        <th class="td-bc">รหัส</th>
+        <th class="td-amt">ยอดเงิน (บาท)</th>
+        <th class="td-act"></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+    <tfoot>
+      <tr>
+        <td colspan="5" class="total-label">รวมทั้งหมด</td>
+        <td class="total-val" id="total">0.00</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+  <div class="controls">
+    <button class="btn btn-blue" onclick="addRow()">+ เพิ่มแถว</button>
+    <button class="btn btn-green" onclick="exportCSV()">📥 Export Excel</button>
+    <span class="info" id="s-info"></span>
+  </div>
+</div>
+
+<!-- ===== PAGE: DB ===== -->
+<div id="page-db" class="page">
+  <h2>จัดการข้อมูลบัญชี</h2>
+  <div class="db-toolbar">
+    <input type="text" id="db-search" placeholder="🔍 ค้นหาชื่อ หรือ เลขบัญชี..." oninput="renderDB()">
+    <button class="btn btn-blue" onclick="openModal()">+ เพิ่มบัญชีใหม่</button>
+    <span class="info" id="db-info"></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th class="td-no">#</th>
+        <th>ชื่อ</th>
+        <th style="width:150px">เลขบัญชี</th>
+        <th style="width:120px">ธนาคาร</th>
+        <th style="width:80px">รหัส</th>
+        <th style="width:64px"></th>
+      </tr>
+    </thead>
+    <tbody id="db-tbody"></tbody>
+  </table>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h3 id="modal-title">เพิ่มบัญชีใหม่</h3>
+    <label>ชื่อ</label>
+    <input type="text" id="m-name" placeholder="ชื่อ-สกุล / ยศ">
+    <label>เลขบัญชี</label>
+    <input type="text" id="m-acc" placeholder="เลขบัญชี">
+    <label>ธนาคาร</label>
+    <select id="m-bank">
+      <option value="กรุงไทย">กรุงไทย (006)</option>
+      <option value="ทหารไทย">ทหารไทย (011)</option>
+      <option value="">อื่นๆ</option>
+    </select>
+    <label>สาขา (ไม่บังคับ)</label>
+    <input type="text" id="m-branch" placeholder="สาขา">
+    <div class="modal-btns">
+      <button class="btn btn-gray" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-blue" onclick="saveModal()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======================================================
+   DATA
+   ====================================================== */
+const BANK_CODE = {"กรุงไทย":"006","ทหารไทย":"011"};
+
+// ข้อมูลเริ่มต้นจากไฟล์ Excel
+const BUILTIN = [{"name":"พ.ต.ธำรงค์ ชมอินทร์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519721"},{"name":"ร.อ.พงษ์คเณศร์ ศรีดารา","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360536537"},{"name":"ร.อ.พิชิตพล เมฆรา","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960265635"},{"name":"พ.ต.ปองภพ ทัศนทอง","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610539864"},{"name":"ร.ท.เอกชลิต บุญรัตน์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360518806"},{"name":"ร.อ.วิรัตน์ ฟุ้งเจริญกุล","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519748"},{"name":"จ.ส.อ.ภูดิษ ธนะภูมิชัย","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520304"},{"name":"จ.ส.อ.รุ่งโรจน์ แตงสวัสดิ์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519896"},{"name":"จ.ส.อ.พิษณุ เชิงทวี","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960265686"},{"name":"จ.ส.อ.ยศภัค หนุนภัคดี","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519691"},{"name":"จ.ส.อ.นรินทร์ พ่วงรักษ์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360522862"},{"name":"จ.ส.อ.บรรเจิด เต็มเปี่ยม","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520924"},{"name":"จ.ส.อ.สมศักดิ์ สุนทรปั้น","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360125650"},{"name":"จ.ส.อ.นันทะวัฒน์ เกษรสุวรรณ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360517699"},{"name":"จ.ส.อ.อาคม เขตอนันต์","bank":"กรุงไทย","branch":"ตะกั่วป่า","acc":"8100066272"},{"name":"จ.ส.อ.อนุรักษ์ เสาวดี","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520010"},{"name":"จ.ส.อ.สมบุญ มุสิกบัณฑิตย์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519845"},{"name":"จ.ส.อ.ปิโยภาส นิลฟัก","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519888"},{"name":"ส.อ.ศราวุฒิ อ้นตลบ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519969"},{"name":"ส.ท.สาธิต ท้วมสุข","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519853"},{"name":"จ.ส.อ.บัญชา กลิ่นฟุ้ง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521106"},{"name":"จ.ส.ท.ธนวัชร สาน้ำอ่าง","bank":"กรุงไทย","branch":"ศาลากลางราชบุรี","acc":"7370162621"},{"name":"จ.ส.อ.ธนพงศ์ พันธ์ศรี","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519934"},{"name":"ส.อ.นพดล ศรีโชติ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519705"},{"name":"จ.ส.อ.ลิขิต ภมร","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521130"},{"name":"จ.ส.อ.รัฐสรณ์ แสงอินทร์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519977"},{"name":"จ.ส.อ.ณัฐพล สุทธิสนธ์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519810"},{"name":"ส.อ.กิตติธัช พงษ์เล็ก","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521386"},{"name":"จ.ส.อ.บรรจบ ฤทธิแรง","bank":"กรุงไทย","branch":"ศาลากลางราชบุรี","acc":"7370165191"},{"name":"ส.อ.ธนพงษ์ พลมณี","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519985"},{"name":"จ.ส.อ.ชินวัฒน์ วงค์สาธิกุล","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519942"},{"name":"ส.อ.พิพัฒน์พงษ์ โคตรพัฒน์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360357578"},{"name":"จ.ส.อ.ชัยวัฒน์ บุญแตง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519993"},{"name":"จ.ส.อ.นิผล ถิรสุทธินนท์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519713"},{"name":"จ.ส.อ.สันติ ชากลาง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520029"},{"name":"จ.ส.อ.กฤติเดช กลับประดิษฐ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360538815"},{"name":"จ.ส.อ.อุดม เอี่ยมสมบูรณ์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521769"},{"name":"จ.ส.อ.เชาว์ คงสมบูรณ์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520673"},{"name":"ส.ท.ธนากร พงษ์ทอง","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610432407"},{"name":"ร.ต.วัชรพงษ์ ปาละ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360517753"},{"name":"จ.ส.อ.ขวัญชัย คนชม","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610426148"},{"name":"จ.ส.อ.อัครวัฒน์ จันทองเทศ","bank":"กรุงไทย","branch":"คฑาธร","acc":"7380292277"},{"name":"จ.ส.อ.ทศพล อยู่ผาสุข","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610512052"},{"name":"จ.ส.ท.อนันต์ นุชนุ่ม","bank":"กรุงไทย","branch":"คฑาธร","acc":"7380292676"},{"name":"ส.ท.อำพล พันธ์บุญมี","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521343"},{"name":"จ.ส.อ.นัทธวัฒน์ สุคำภา","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519764"},{"name":"ร.ต.มนตรี แดงด้อมยุทธ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519799"},{"name":"จ.ส.อ.สุริยะ ปิ่นโมรา","bank":"กรุงไทย","branch":"คฑาธร","acc":"7380254715"},{"name":"จ.ส.ท.พีระพัฒน์ พูลเกตุ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360523354"},{"name":"จ.ส.อ.จักรเพชร อุ่นทา","bank":"กรุงไทย","branch":"จอมบึง","acc":"7440410289"},{"name":"จ.ส.อ.ประสิทธิ์ มีเงินทอง","bank":"กรุงไทย","branch":"นครปฐม","acc":"3900136459"},{"name":"ส.อ.พงศกร ถาวรนันท์","bank":"ทหารไทย","branch":"คฑาธร","acc":"5432226099"},{"name":"ส.อ.จิรวัฒน์ ใหญ่ท้วม","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360530350"},{"name":"ร.ต.นฤมิตร ชิดพันธ์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360517354"},{"name":"พ.ต.โยธิน จันทร์สิงขร","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7380247263"},{"name":"จ.ส.ท.กิตติทัต จีนนอก","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521548"},{"name":"จ.ส.อ.อุทัย จันทร์แม้น","bank":"กรุงไทย","branch":"","acc":"7360520428"},{"name":"จ.ส.อ.ปรีชา เล็กเจริญ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520568"},{"name":"จ.ส.ท.เอกพงษ์ จอมขัน","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960266453"},{"name":"จ.ส.อ.ยรรยงค์ เชื้อสุวรรณ์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360517842"},{"name":"ร.ท.พลายชุมพล ปานนาค","bank":"กรุงไทย","branch":"แม่กลอง","acc":"7480454554"},{"name":"ส.อ.สุวัฒน์ จิรพัฒน์วิริยะกุล","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360533007"},{"name":"ร.ต.ประทีป คชรักษา","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520371"},{"name":"จ.ส.อ.อภิเชษฐ์ พันธ์แจ่ม","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610510955"},{"name":"จ.ส.ต.จตุรพร พรางแก้ว","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520312"},{"name":"ส.อ.อดิศร สาดสี","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360530334"},{"name":"ร.ท.จำลอง ชิดวิลัย","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610511501"},{"name":"จ.ส.อ.สำรวย บุญสมบูรณ์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521610"},{"name":"จ.ส.อ.เวศสุนันท์ ศิริอังกานนท์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521254"},{"name":"จ.ส.อ.สมชาย สิงหนาท","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519829"},{"name":"ร.ท.คะเนนัย อรัญพันธ์","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610512036"},{"name":"จ.ส.อ.ศักดา สุวรรณประภา","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7050318043"},{"name":"จ.ส.อ.ทรรศพล ดีโชติ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521270"},{"name":"จ.ส.อ.สันติ สีแดงบุตร","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610513849"},{"name":"ร.ท.แสวงชัย เรืองเดช","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610511935"},{"name":"ส.อ.อภิสิทธิ์ จอมเผือก","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610512451"},{"name":"ร.ต.ชัยธนันท์ ศรีสวัสดิ์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520444"},{"name":"จ.ส.อ.ชิติสรรค์ ชยธิการ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521424"},{"name":"ส.อ.จิรพัฒน์ ชุยยะกิจ","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112676287"},{"name":"จ.ส.อ.รณภพ นุตรักษ์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519802"},{"name":"ร.ท.ชัยอนันต์ คงดี","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521521"},{"name":"ส.อ.ชิษณุพงศ์ ถนอมเขต","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519861"},{"name":"ส.ท.ปฎิมากร วังเวิน","bank":"กรุงไทย","branch":"บิ๊กซี อ่อนนุช","acc":"6601002844"},{"name":"ร.ท.วีระศักดิ์ เรืองสุข","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"3560214009"},{"name":"จ.ส.อ.ธีระยุทธ สุขขัง","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610153311"},{"name":"ร.อ.วิทูร รางแดง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360517737"},{"name":"ส.ท.บุญส่ง ศรีธาตุ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520665"},{"name":"ร.ต.สัญญา พานสร้อย","bank":"กรุงไทย","branch":"คฑาธร","acc":"7380264478"},{"name":"จ.ส.อ.ดนัย รุ่งรจนา","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521319"},{"name":"ส.ท.ภูวดล นาเพชร","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521467"},{"name":"จ.ส.อ.มานพ ตาทิพย์","bank":"กรุงไทย","branch":"คฑาธร","acc":"7380292781"},{"name":"จ.ส.อ.สุทัศน์ นาคา","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521157"},{"name":"จ.ส.อ.ณัฏฐพงศ์ เกิดสว่าง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360522382"},{"name":"จ.ส.อ.กรวิทย์ พงษ์ลุน","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610426091"},{"name":"ส.อ.ศุภวิชญ์ พ่วงประจง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360538793"},{"name":"จ.ส.อ.สุวรรณ แตงนวน","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521122"},{"name":"จ.ส.อ.ระพิพัฒน์ ไทยแท้","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521491"},{"name":"ส.ท.พัลลภ โกญจนาท","bank":"กรุงไทย","branch":"จอมบึง","acc":"7440479238"},{"name":"จ.ส.อ.เลอศักดิ์ ระย้าแก้ว","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520983"},{"name":"ส.อ.เกริกฤทธิ์ สังสุข","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521475"},{"name":"จ.ส.อ.วิสารช์ สวนส้มจีน","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520436"},{"name":"จ.ส.อ.เชษฐพล กลิ่นชะนะ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520355"},{"name":"จ.ส.อ.ไกรศิรฉัตร สิงหาด","bank":"กรุงไทย","branch":"คฑาธร","acc":"7380292285"},{"name":"จ.ส.อ.มงคล เปรมปรี","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7050199966"},{"name":"จ.ส.อ.นิพนธ์ คำทอง","bank":"กรุงไทย","branch":"ศาลากลางราชบุรี","acc":"7370166562"},{"name":"จ.ส.อ.สุริยา ศรีสอาด","bank":"กรุงไทย","branch":"ปากท่อ","acc":"7210423273"},{"name":"จ.ส.อ.ธีระพนธ์ กุลใส","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521033"},{"name":"จ.ส.อ.อนวรรษ มั่นใจ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360517869"},{"name":"จ.ส.อ.กฤตเมธ กล่อมจิตร์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360525683"},{"name":"จ.ส.อ.วีรวุฒิ ลุนากัน","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520347"},{"name":"จ.ส.อ.ก้าน อินอำไพ","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610512079"},{"name":"จ.ส.อ.มงคล สิวานนท์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521300"},{"name":"จ.ส.อ.กฤษณะ ชมมน","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520754"},{"name":"ส.อ.พีระ สมประสงค์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520533"},{"name":"จ.ส.อ.สุระชาติ รอดเย็น","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7050318698"},{"name":"จ.ส.อ.บุญเรือง อุ่นจิตร","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520835"},{"name":"ส.อ.ณัฐพล ชัมภารีย์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521440"},{"name":"ส.อ.ณัฎฐ์ชยธร ศิริดุสิตาสกุล","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360535123"},{"name":"จ.ส.อ.บุญเลิศ สิงห์โต","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520967"},{"name":"จ.ส.อ.สราวุธ รัตนยะนนท์","bank":"กรุงไทย","branch":"ศาลากลางราชบุรี","acc":"7370165574"},{"name":"ส.อ.สิรภพ เอื้อสรรเสริญ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520452"},{"name":"จ.ส.อ.อดิศักดิ์ วรรณโสภา","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519128"},{"name":"จ.ส.อ.ศราวุฒิ เวชการ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519012"},{"name":"ส.ท.วรเมธ บุตรเคียง","bank":"กรุงไทย","branch":"โรบินสัน เพชรบุรี","acc":"6602198068"},{"name":"จ.ส.อ.เสน่ห์ ทัศนา","bank":"กรุงไทย","branch":"ปากท่อ","acc":"7210425756"},{"name":"จ.ส.อ.ประติพัทธ์ บุริวัฒน์","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960266844"},{"name":"จ.ส.อ.สมประสงค์ สิงหล","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519926"},{"name":"พ.ต.วรวิทย์ พลพุ่ม","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610510947"},{"name":"ร.ท.สุรเชษฐ์ บุญเนตร","bank":"กรุงไทย","branch":"โพธาราม","acc":"7080693403"},{"name":"จ.ส.ต.ภาคินัย คะนันท์","bank":"ทหารไทย","branch":"โรบินสัน เพชรบุรี","acc":"3112558014"},{"name":"จ.ส.อ.ชนทิชา รุ่งเรือง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521009"},{"name":"จ.ส.อ.วีรชัย สุขนวล","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520487"},{"name":"จ.ส.อ.อนุชาติ งามรัตนปรีชา","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"7360576482"},{"name":"จ.ส.ต.เกียรติประวุฒิ เคลิ้มฝัน","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520320"},{"name":"จ.ส.อ.วสิษฐ์พล สนธิ์เศรษฐี","bank":"กรุงไทย","branch":"คฑาธร","acc":"7380292773"},{"name":"จ.ส.อ.เอกสิทธิ์ มนต์จริยาพร","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521661"},{"name":"ส.อ.อัครเดช บำรุงกิจ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360538688"},{"name":"ส.อ.เอกชัย แตงนวน","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7050321346"},{"name":"ส.ท.สิทธิ ลีลพัฒนกิจ","bank":"กรุงไทย","branch":"เขาพระงาม","acc":"1350570524"},{"name":"จ.ส.อ.อำนาจ พูลสุวรรณ","bank":"กรุงไทย","branch":"แม่กลอง","acc":"7480510276"},{"name":"จ.ส.อ.นพดล เลือกใช้","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520479"},{"name":"จ.ส.อ.อภิชาติ จำเหล่","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360522196"},{"name":"จ.ส.อ.คมสันต์ พุ่มพวง","bank":"กรุงไทย","branch":"คฑาธร","acc":"7380291831"},{"name":"ร.ต.มณเฑียร ศรีเทเวศน์","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7050320773"},{"name":"ส.ท.กนกพงษ์ เรืองเดช","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519780"},{"name":"จ.ส.ท.ดำรงค์ แก้วจินดา","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610511862"},{"name":"ส.อ.พงศกร นาคเนียม","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610451045"},{"name":"จ.ส.อ.ปราโมทย์ หมูนดี","bank":"กรุงไทย","branch":"เขาพระงาม","acc":"1350570125"},{"name":"จ.ส.อ.คณินทร์ ทิมสุวรรณ","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610514179"},{"name":"จ.ส.อ.แสนศักดิ์ คืนรัมย์","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960265732"},{"name":"จ.ส.อ.พนิต ละมูล","bank":"กรุงไทย","branch":"คฑาธร","acc":"7380203460"},{"name":"ส.ท.อโณทัย ขำซื่อ","bank":"กรุงไทย","branch":"นครราชสีมา","acc":"3013911522"},{"name":"จ.ส.อ.เอนก จันทร์เจริญ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519837"},{"name":"ส.ท.ภูริพงษ์ รุ่งรจนา","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520282"},{"name":"จ.ส.ท.จรัญ วิชัยเมือง","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960266496"},{"name":"จ.ส.อ.นพรัตน์ อินโต","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520517"},{"name":"จ.ส.อ.ประยูร สมพงษ์เจริญ","bank":"กรุงไทย","branch":"สวนผึ้ง","acc":"7290466497"},{"name":"ร.ต.จักร์กฤษณ์ ดีหมื่นไวย์","bank":"กรุงไทย","branch":"จัตุรัส","acc":"6602494341"},{"name":"จ.ส.อ.สุวิทย์ เปลี่ยนขำ","bank":"กรุงไทย","branch":"โพธาราม","acc":"7080692806"},{"name":"จ.ส.อ.อรุณ ศศะรมย์","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112423516"},{"name":"จ.ส.ต.อานนท์ ทองใบ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520339"},{"name":"จ.ส.อ.ชาญเดช กลิ่นกาหลง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519284"},{"name":"จ.ส.อ.สัญญา นรสาร","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520401"},{"name":"จ.ส.อ.วรพจน์ พงษ์ทอง","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112298710"},{"name":"จ.ส.อ.ปริวัตร คำกลาง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520657"},{"name":"จ.ส.อ.ฉัตรตฤณ เอี่ยมคะนา","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7050303534"},{"name":"จ.ส.อ.สราวุฒิ สุบินยัง","bank":"กรุงไทย","branch":"จอมบึง","acc":"7440479785"},{"name":"จ.ส.อ.ศรายุธ หงษ์ทอง","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610273880"},{"name":"ส.อ.เกรียงไกร เกตุไสว","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519950"},{"name":"ร.ต.วันชัย พรมนิ่ม","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360522730"},{"name":"จ.ส.อ.อดิศร สงฆ์มีสุข","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7050319589"},{"name":"จ.ส.อ.ศักดิ์ชัย ทองแย้ม","bank":"กรุงไทย","branch":"จอมบึง","acc":"7440478894"},{"name":"จ.ส.อ.ศรายุทธ ทาสันเทียะ","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610511129"},{"name":"จ.ส.อ.รณรงค์ วงษ์บัวทอง","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7050318477"},{"name":"จ.ส.อ.ชัยสิทธิ์ เกตุกุญชร","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610512982"},{"name":"จ.ส.อ.อดิสรณ์ ภูริชโชค","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360586240"},{"name":"จ.ส.อ.มีชัย วงศ์อักษร","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610307688"},{"name":"จ.ส.อ.นรินทร์ ฉายวรรณ","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610511412"},{"name":"พ.ท.ธนวรรธน์ ฉลาดการณ์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520460"},{"name":"จ.ส.อ.สุรศักดิ์ มากนุ่น","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610513679"},{"name":"จ.ส.อ.จุติโชค บุญเรือง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521688"},{"name":"จ.ส.อ.ฤทธิรงค์ สุขศิริ","bank":"กรุงไทย","branch":"ถนนไกรเพชร","acc":"3560232104"},{"name":"จ.ส.อ.วัชรินทร์ แสงอ่ำ","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610512699"},{"name":"พ.ต.สุรพงศ์ เก่งโพธา","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520541"},{"name":"จ.ส.อ.ศิริโรจน์ ใยรีอ่าง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520975"},{"name":"จ.ส.อ.มูลจิต ฉันสิมา","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360517540"},{"name":"จ.ส.อ.สุเทพ การะคุณ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520576"},{"name":"จ.ส.อ.อริยะ นิลจันทร์","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960265007"},{"name":"จ.ส.ท.นคเรศ ตาก้อง","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610519758"},{"name":"จ.ส.อ.วีระพงษ์ พรรื่นเริง","bank":"กรุงไทย","branch":"สว่างแดนดิน","acc":"4400800857"},{"name":"จ.ส.อ.อุปชาติ วิรณะ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360522390"},{"name":"จ.ส.อ.สมภพ เหมือนแก้ว","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520606"},{"name":"ส.อ.ณัฐพล ทองจันทร์","bank":"ทหารไทย","branch":"ดำเนินสะดวก","acc":"4692243639"},{"name":"จ.ส.อ.ปกาศิต ศรีสงคราม","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610513296"},{"name":"จ.ส.อ.ธนพงศ์ อ่อนดี","bank":"ทหารไทย","branch":"ถนนคฑาธร","acc":"5432385093"},{"name":"จ.ส.อ.สมคิด ทาจันทึก","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520789"},{"name":"ส.ท.ณัฐภัทร มหาสังข์","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610450294"},{"name":"จ.ส.อ.พงศ์ธร ชุ่มชื่น","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521068"},{"name":"จ.ส.อ.วิโรจน์ เกิดทรัพย์","bank":"กรุงไทย","branch":"เขาพระงาม","acc":"1350570451"},{"name":"จ.ส.อ.วรสิทธิ์ บุญธรรม","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520991"},{"name":"จ.ส.อ.สันติ โสภาราษฎร์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520398"},{"name":"จ.ส.อ.นารถพล เทพนรรัตน์","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610513512"},{"name":"จ.ส.อ.วิโรจน์ ม่วงสุราช","bank":"กรุงไทย","branch":"จอมบึง","acc":"7440479793"},{"name":"จ.ส.อ.แทน สุขนา","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521084"},{"name":"จ.ส.อ.ชัยวัฒน์ สงวนงาม","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520630"},{"name":"ส.อ.วรวิสฐ์ ชูศิลป์","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610586102"},{"name":"ร.ต.ภาสวิชญ์ นิลพัฒน์","bank":"กรุงไทย","branch":"ฟิวเจอร์ปาร์ค รังสิต","acc":"4673266595"},{"name":"จ.ส.อ.ศรายุทธ ผ่องลาภ","bank":"ทหารไทย","branch":"ศรีสุริยะวงศ์","acc":"3112369909"},{"name":"จ.ส.อ.อำนาจ แย้มอยู่วงษ์","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610512095"},{"name":"จ.ส.อ.บรรลือศักดิ์ กำปุก","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960264892"},{"name":"จ.ส.อ.จรูญ ท้าวศรีสกุล","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360519756"},{"name":"จ.ส.อ.ชาตรี กะรัมย์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521505"},{"name":"จ.ส.อ.พิสิทธิ์ ยอดไหม","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7050318205"},{"name":"จ.ส.อ.นพดล สุทธิวิรัช","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360457025"},{"name":"จ.ส.อ.วิทยา เผือกนิล","bank":"กรุงไทย","branch":"ปากท่อ","acc":"7210423850"},{"name":"ส.อ.วสุพล หอมกลิ่น","bank":"ทหารไทย","branch":"สระบุรี","acc":"3122628112"},{"name":"จ.ส.อ.บรรจง พลเยี่ยม","bank":"กรุงไทย","branch":"","acc":"9802506672"},{"name":"ส.อ.พัชรพล สิมมาลา","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112651322"},{"name":"ส.อ.ดุลยวัต เมืองนก","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360549906"},{"name":"จ.ส.ต.ชิษณุชา ชัยรูป","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360573173"},{"name":"ส.อ.ณัฐวุฒิ เภาด้วง","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112596949"},{"name":"ส.อ.เชิดชัย เขียวขำ","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7360687861"},{"name":"ร.ต.กฤษณะ แพสอาด","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360529689"},{"name":"ส.อ.นิรุจน์ บุญคำ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521238"},{"name":"จ.ส.ต.ณัฐวุฒิ บัวทอง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360540682"},{"name":"จ.ส.ต.ปริญญา เชี่ยวชาญ","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960296042"},{"name":"จ.ส.อ.อโนทัย อินทรีย์","bank":"กรุงไทย","branch":"จอมบึง","acc":"7440478916"},{"name":"พ.ท.ไกศิน สาสุนีย์","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960295399"},{"name":"จ.ส.อ.เอกชัย วงศ์วรชาติพิชิต","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521351"},{"name":"ร.อ.กิตติวินท์ อุ่นที","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521025"},{"name":"จ.ส.อ.นฤชัย พรมทา","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520932"},{"name":"จ.ส.อ.วนภัทร จันทร์กมล","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521181"},{"name":"ส.อ.ฤกษ์ชัย มากอิ่ม","bank":"กรุงไทย","branch":"โรบินสัน ลพบุรี","acc":"6601047821"},{"name":"จ.ส.อ.ธวัชชัย เนยเขียว","bank":"ทหารไทย","branch":"ศรีสุริยะวงศ์","acc":"3112344597"},{"name":"ส.อ.ภาณุวัฒน์ สงฆจิน","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7050319481"},{"name":"ส.อ.คมสันต์ ยงศรีปัญญฤทธิ์","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112605542"},{"name":"จ.ส.ต.สนธิกิตติ์ อยู่สุข","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112634476"},{"name":"จ.ส.อ.วัลลภ วงศ์ษา","bank":"กรุงไทย","branch":"ศาลากลางราชบุรี","acc":"7370151727"},{"name":"จ.ส.อ.ชยธร พุ่มเจริญ","bank":"กรุงไทย","branch":"บิ๊กซี ลพบุรี","acc":"7520387461"},{"name":"จ.ส.อ.ยุทธนา ดวงพลอย","bank":"กรุงไทย","branch":"โรบินสัน ลพบุรี","acc":"6601063576"},{"name":"จ.ส.อ.ฉลาด ยานุวงค์","bank":"กรุงไทย","branch":"เขาพระงาม","acc":"1350570494"},{"name":"จ.ส.อ.ปฏิพัทธ์ พิมพา","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960265775"},{"name":"จ.ส.อ.วีระศักดิ์ เบ็ญจรูญ","bank":"กรุงไทย","branch":"คุระบุรี","acc":"8250302583"},{"name":"จ.ส.อ.ศุภชัย ฟอกสันเทียะ","bank":"กรุงไทย","branch":"เขาพระงาม","acc":"1350570508"},{"name":"ส.ท.ฤทธิเกียรติ ทองคำ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520584"},{"name":"ส.ท.ธีรเมธ มาลาสีตะ","bank":"กรุงไทย","branch":"ตาคลี","acc":"6070441389"},{"name":"พ.ท.พิสิษฐ์ ฉัตรวิวัฒนากุล","bank":"กรุงไทย","branch":"เซ็นทรัลปิ่นเกล้า","acc":"0310897319"},{"name":"ส.อ.พิพัฒน์พงศ์ นาแป้น","bank":"กรุงไทย","branch":"ถนนคฑาธร","acc":"7380292684"},{"name":"จ.ส.อ.เฉลิมวุฒิ พลอยดี","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360395070"},{"name":"ร.ต.ธนภัตร อร่ามหนุน","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960296034"},{"name":"ส.อ.ธีรพงศ์ โจหิงค์","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112580398"},{"name":"ส.อ.ทรงวิทย์ สุวรรณผุก","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112575612"},{"name":"ร.ท.ฉลองชัย บางจาก","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112275882"},{"name":"ส.อ.ทัตพงศ์ สุวรรณฉวี","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112532746"},{"name":"จ.ส.ต.วิชนาถ ศรีไชย","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112582733"},{"name":"ส.อ.สุริยัน วรรณกาล","bank":"กรุงไทย","branch":"ศาลากลางราชบุรี","acc":"7370170950"},{"name":"จ.ส.อ.สมยศ กระนีจิตต์","bank":"กรุงไทย","branch":"พรหมพิราม","acc":"6370506117"},{"name":"จ.ส.อ.เอกวิทย์ บุญแก้ว","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521297"},{"name":"ส.อ.ชัยวัฒน์ พุกงาม","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521459"},{"name":"ร.ต.ทองหล่อ คำดีวัน","bank":"กรุงไทย","branch":"จอมบึง","acc":"7440479807"},{"name":"จ.ส.อ.ยุทธภูมิ เสียงเพราะ","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960266925"},{"name":"ส.อ.พลากร เนียมทอง","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610512311"},{"name":"จ.ส.ต.สุรชัย วันสาสืบ","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610606936"},{"name":"จ.ส.อ.ทนงศักดิ์ เสียงเพราะ","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960296182"},{"name":"ส.อ.นิวิสน์ ปุญญธรรม","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960299025"},{"name":"จ.ส.อ.วรศักดิ์ สมิตินันทน์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520622"},{"name":"จ.ส.ท.วัชระ คงศรี","bank":"กรุงไทย","branch":"ราชบุรี","acc":"7050320382"},{"name":"จ.ส.อ.ธนัตถ์ แก่นจำปา","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960296026"},{"name":"จ.ส.อ.ณัฐวุฒิ ศรีงาม","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520290"},{"name":"จ.ส.อ.ประดิษฐ์ นดตะขบ","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112424126"},{"name":"จ.ส.อ.นะธี ศิลาดี","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520916"},{"name":"ส.อ.ณัทกร เคียงคู่","bank":"กรุงไทย","branch":"โรบินสัน ลพบุรี","acc":"6601047767"},{"name":"จ.ส.ต.นพรัตน์ ชุณหรัต","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112581388"},{"name":"จ.ส.ต.สหชาติ กับปิยะ","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112615574"},{"name":"พ.ท.ประวิทย์ บำรุงรักษ์","bank":"ทหารไทย","branch":"คฑาธร","acc":"5432053170"},{"name":"ส.ท.พิษณุ ยี่สุ่น","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521378"},{"name":"จ.ส.อ.วัชรพงษ์ กองผุย","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521246"},{"name":"จ.ส.อ.วชิระ วรรณฤทธิ์","bank":"ทหารไทย","branch":"คฑาธร","acc":"5432055019"},{"name":"ส.ท.เกริกเกียรติ กิจดำรงวินิจกุล","bank":"กรุงไทย","branch":"บ้านโป่ง","acc":"7060883754"},{"name":"จ.ส.อ.สุขเกษม เขมาภิรักษ์","bank":"กรุงไทย","branch":"ศาลากลางราชบุรี","acc":"7370168174"},{"name":"ส.อ.อัครวัฒน์ ธนัตถ์ชนินธร","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360517915"},{"name":"ส.ท.กรกต นพรัตน์ธีระวุฒิ","bank":"กรุงไทย","branch":"บิ๊กซีราชบุรี","acc":"7610452823"},{"name":"จ.ส.อ.จรินทร์ กันภัย","bank":"กรุงไทย","branch":"โพธาราม","acc":"7080008166"},{"name":"จ.ส.อ.กิตติพงษ์ กันรัมย์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360582679"},{"name":"จ.ส.อ.สุริยา ทับประสิทธิ์","bank":"กรุงไทย","branch":"บิ๊กซี ลพบุรี","acc":"7520208311"},{"name":"จ.ส.อ.คฑาวุฒิ จิเหลา","bank":"กรุงไทย","branch":"เขาพระงาม","acc":"1350320560"},{"name":"จ.ส.อ.ทรงวุฒิ แสงหวาน","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520940"},{"name":"ส.อ.กฤษณะ เชื่อมชิต","bank":"ทหารไทย","branch":"เพชรบุรี","acc":"3572695058"},{"name":"ส.อ.สรนันท์ บัวบาน","bank":"กรุงไทย","branch":"เขาพระงาม","acc":"1350570532"},{"name":"จ.ส.อ.วีระศักดิ์ บุญวัน","bank":"ทหารไทย","branch":"คฑาธร","acc":"5432154341"},{"name":"ส.อ.วรโชติ วงศ์บุตรดี","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360520509"},{"name":"จ.ส.อ.ธวัชชัย หมั่นเพียร","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112297753"},{"name":"ร.อ.บุญเลิศ โพธิ์สันเทียะ","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360399491"},{"name":"จ.ส.อ.ภิญโญ ดาวกระจาย","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360517532"},{"name":"จ.ส.อ.สุระพงศ์ ศรีชู","bank":"กรุงไทย","branch":"จอมบึง","acc":"7440479564"},{"name":"ส.อ.ณัฐวุฒิ รอดเคราะห์","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360521203"},{"name":"จ.ส.อ.สัณหพจน์ แจ่ทจันทรา","bank":"ทหารไทย","branch":"ราชบุรี","acc":"3112491869"},{"name":"พ.อ.เอกมงคล ธนะขว้าง","bank":"กรุงไทย","branch":"ศรีสุริยะวงศ์","acc":"7360598192"},{"name":"จ.ส.อ.ประดิษฐ์ พระนอนเขต","bank":"กรุงไทย","branch":"แจ้งวัฒนะ","acc":"0960267271"},{"name":"เงิน สก.พัน.ช.คมศ.","bank":"ทหารไทย","branch":"","acc":"3112244839"},{"name":"เงิน สวัสดิการ กองพันทหารช่างเครื่องมือพิเศษ","bank":"ทหารไทย","branch":"","acc":"3112151174"}];
+
+/* ======================================================
+   STORAGE — extra accounts added by user
+   ====================================================== */
+const STORAGE_KEY = 'bank_accounts_extra';
+const OVERRIDE_KEY = 'bank_accounts_override';
+
+function loadExtra() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+}
+function saveExtra(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+
+function loadOverrides() {
+  try { return JSON.parse(localStorage.getItem(OVERRIDE_KEY) || '{}'); } catch { return {}; }
+}
+function saveOverrides(obj) { localStorage.setItem(OVERRIDE_KEY, JSON.stringify(obj)); }
+
+function getDB() {
+  const ov = loadOverrides();
+  const builtin = BUILTIN.map(r => ov[r.acc] ? { ...r, ...ov[r.acc], _edited: true } : r);
+  return [...builtin, ...loadExtra()];
+}
+
+/* ======================================================
+   TAB
+   ====================================================== */
+function switchTab(t) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + t).classList.add('active');
+  document.querySelector(`.tab-btn[onclick="switchTab('${t}')"]`).classList.add('active');
+  if (t === 'db') renderDB();
+}
+
+/* ======================================================
+   SEARCH PAGE
+   ====================================================== */
+let n = 0;
+
+function addRow(p) {
+  n++;
+  const id = n;
+  const tr = document.createElement('tr');
+  tr.id = 'r' + id;
+  tr.innerHTML = `
+    <td class="td-no">${id}</td>
+    <td class="td-name">
+      <input type="text" id="q${id}" placeholder="พิมพ์ชื่อ หรือ เลขบัญชี..." autocomplete="off"
+        oninput="onSrch(${id})" onblur="hideDD(${id})" onfocus="onSrch(${id})">
+      <div id="dd${id}" class="dropdown-box" style="display:none"></div>
+    </td>
+    <td class="td-acc"><input type="text" id="acc${id}" placeholder="เลขบัญชี"></td>
+    <td class="td-bank">
+      <select id="bank${id}" onchange="syncCode(${id})">
+        <option value="กรุงไทย">กรุงไทย</option>
+        <option value="ทหารไทย">ทหารไทย</option>
+        <option value="">อื่นๆ</option>
+      </select>
+    </td>
+    <td class="td-bc"><input type="text" id="bc${id}" readonly></td>
+    <td class="td-amt"><input type="number" id="amt${id}" placeholder="0.00" step="0.01" min="0" oninput="updTotal()"></td>
+    <td class="td-act"><button class="btn-del" onclick="delRow(${id})">×</button></td>
+  `;
+  document.getElementById('tbody').appendChild(tr);
+  if (p) fillRow(id, p);
+  syncCode(id);
+  updInfo();
+}
+
+function fillRow(id, r) {
+  document.getElementById('q' + id).value = r.name;
+  document.getElementById('acc' + id).value = r.acc;
+  const sel = document.getElementById('bank' + id);
+  sel.value = BANK_CODE[r.bank] ? r.bank : '';
+  syncCode(id);
+}
+
+function syncCode(id) {
+  document.getElementById('bc' + id).value = BANK_CODE[document.getElementById('bank' + id).value] || '';
+}
+
+function delRow(id) {
+  document.getElementById('r' + id)?.remove();
+  updInfo(); updTotal();
+}
+
+function onSrch(id) {
+  const q = document.getElementById('q' + id).value.trim().toLowerCase();
+  const dd = document.getElementById('dd' + id);
+  if (!q) { dd.style.display = 'none'; return; }
+  const res = getDB().filter(r => r.name && (r.name.toLowerCase().includes(q) || r.acc.includes(q))).slice(0, 10);
+  if (!res.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = res.map((r, i) =>
+    `<div onmousedown="pickRow(${id},${i},${JSON.stringify(r).replace(/"/g, '&quot;')})">
+      ${r.name}${r._custom ? ' <span class="tag-new">เพิ่มเอง</span>' : ''}
+      <span class="d-sub">${r.bank} ${r.acc}</span>
+    </div>`
+  ).join('');
+  dd.style.display = 'block';
+}
+
+function pickRow(id, i, r) {
+  fillRow(id, r);
+  document.getElementById('dd' + id).style.display = 'none';
+}
+
+function hideDD(id) {
+  setTimeout(() => { const d = document.getElementById('dd' + id); if (d) d.style.display = 'none'; }, 180);
+}
+
+function updInfo() {
+  document.getElementById('s-info').textContent = document.querySelectorAll('#tbody tr').length + ' รายการ';
+}
+
+function updTotal() {
+  let t = 0;
+  document.querySelectorAll('#tbody tr').forEach(tr => {
+    const id = tr.id.replace('r', '');
+    t += parseFloat(document.getElementById('amt' + id)?.value) || 0;
+  });
+  document.getElementById('total').textContent = t.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+}
+
+function exportCSV() {
+  const rows = [];
+  document.querySelectorAll('#tbody tr').forEach(tr => {
+    const id = tr.id.replace('r', '');
+    const bc = document.getElementById('bc' + id)?.value || '';
+    const acc = document.getElementById('acc' + id)?.value || '';
+    const name = document.getElementById('q' + id)?.value || '';
+    const amt = document.getElementById('amt' + id)?.value || '';
+    if (acc || name) rows.push([bc, acc, name, amt]);
+  });
+  if (!rows.length) { alert('ไม่มีข้อมูล'); return; }
+  const csv = '\uFEFF' + 'รหัสธนาคาร,เลขบัญชี,ชื่อ,ยอดเงิน\n'
+    + rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })),
+    download: 'โอนเงิน.csv'
+  }).click();
+}
+
+/* ======================================================
+   DB PAGE
+   ====================================================== */
+function renderDB() {
+  const q = (document.getElementById('db-search')?.value || '').trim().toLowerCase();
+  const extra = loadExtra();
+  const ov = loadOverrides();
+  const all = [
+    ...BUILTIN.map(r => ov[r.acc] ? { ...r, ...ov[r.acc], _edited: true } : { ...r, _custom: false }),
+    ...extra.map(r => ({ ...r, _custom: true }))
+  ];
+  const filtered = q ? all.filter(r => r.name.toLowerCase().includes(q) || r.acc.includes(q)) : all;
+
+  const tbody = document.getElementById('db-tbody');
+  const ovCount = Object.keys(ov).length;
+  tbody.innerHTML = filtered.map((r, i) => {
+    const bc = BANK_CODE[r.bank] || '';
+    const badge = r.bank === 'กรุงไทย' ? 'badge-kt' : r.bank === 'ทหารไทย' ? 'badge-ttb' : 'badge-other';
+    const tag = r._custom ? ' <span class="tag-new">เพิ่มเอง</span>'
+              : r._edited ? ' <span class="tag-new" style="background:#fef9c3;color:#854d0e">แก้ไขแล้ว</span>'
+              : '';
+    const rJson = JSON.stringify({name:r.name,acc:r.acc,bank:r.bank,branch:r.branch||'',_custom:r._custom||false}).replace(/"/g,"&quot;");
+    const delBtn = r._custom
+      ? `<button class="btn-del" title="ลบ" onclick="deleteEntry('&quot;${r.acc}&quot;','&quot;${r.name.replace(/'/g,"\'")}',true)">×</button>`
+      : r._edited
+        ? `<button class="btn-del" style="background:#f59e0b" title="คืนค่าเดิม" onclick="resetEntry('${r.acc}')">↩</button>`
+        : '';
+    return `<tr>
+      <td class="td-no">${i + 1}</td>
+      <td>${r.name}${tag}</td>
+      <td style="font-family:monospace">${r.acc}</td>
+      <td><span class="${badge}">${r.bank}</span></td>
+      <td style="text-align:center;color:#555">${bc}</td>
+      <td style="text-align:center;white-space:nowrap">
+        <button class="btn-edit" title="แก้ไข" onclick="editEntryJson('${rJson}')">✏️</button>${delBtn}
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('db-info').textContent = `${filtered.length} รายการ (เพิ่มเอง ${extra.length} · แก้ไขต้นฉบับ ${ovCount})`;
+}
+
+/* ======================================================
+   MODAL — add / edit
+   ====================================================== */
+let _editOldAcc = null;
+let _editIsCustom = false;
+
+function openModal(r) {
+  _editOldAcc = r ? r.acc : null;
+  _editIsCustom = r ? (r._custom === true) : false;
+  document.getElementById('modal-title').textContent = r ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่';
+  document.getElementById('m-name').value   = r ? r.name   : '';
+  document.getElementById('m-acc').value    = r ? r.acc    : '';
+  document.getElementById('m-bank').value   = r ? (r.bank || 'กรุงไทย') : 'กรุงไทย';
+  document.getElementById('m-branch').value = r ? (r.branch || '') : '';
+  document.getElementById('modal-bg').classList.add('open');
+  setTimeout(() => document.getElementById('m-name').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+}
+
+function saveModal() {
+  const name   = document.getElementById('m-name').value.trim();
+  const acc    = document.getElementById('m-acc').value.trim();
+  const bank   = document.getElementById('m-bank').value;
+  const branch = document.getElementById('m-branch').value.trim();
+  if (!name || !acc) { alert('กรุณากรอกชื่อและเลขบัญชี'); return; }
+
+  if (_editOldAcc === null) {
+    const extra = loadExtra();
+    const allAcc = [...BUILTIN, ...extra].map(e => e.acc);
+    if (allAcc.includes(acc) && !confirm('เลขบัญชี ' + acc + ' มีอยู่แล้ว ต้องการเพิ่มซ้ำไหม?')) return;
+    extra.push({ name, acc, bank, branch, _custom: true });
+    saveExtra(extra);
+  } else if (_editIsCustom) {
+    const extra = loadExtra();
+    const idx = extra.findIndex(e => e.acc === _editOldAcc);
+    if (idx >= 0) extra[idx] = { name, acc, bank, branch, _custom: true };
+    saveExtra(extra);
+  } else {
+    const ov = loadOverrides();
+    ov[_editOldAcc] = { name, acc, bank, branch };
+    saveOverrides(ov);
+  }
+  closeModal();
+  renderDB();
+}
+
+function editEntryJson(jsonStr) {
+  try { openModal(JSON.parse(jsonStr.replace(/&quot;/g, '"'))); } catch(e) { console.error(e); }
+}
+
+function deleteEntry(acc, name) {
+  if (!confirm('ลบบัญชี "' + name + '" (' + acc + ') ใช่ไหม?')) return;
+  saveExtra(loadExtra().filter(e => !(e.acc === acc && e.name === name)));
+  renderDB();
+}
+
+function resetEntry(acc) {
+  if (!confirm('คืนค่าเดิมของเลขบัญชี ' + acc + ' ใช่ไหม?')) return;
+  const ov = loadOverrides();
+  delete ov[acc];
+  saveOverrides(ov);
+  renderDB();
+}
+
+// close modal on bg click
+document.getElementById('modal-bg').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// keyboard: Enter in modal = save
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('modal-bg').classList.contains('open')) saveModal();
+  if (e.key === 'Escape') closeModal();
+});
+
+// init
+addRow();
+</script>
+</body>
+</html>
