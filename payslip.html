@@ -86,7 +86,7 @@ table.main tr:hover td{background:#f5f8fd;}
     <p id="topbarSub">กำลังโหลดข้อมูล...</p>
   </div>
   <div class="topbar-right">
-    <button class="btn" onclick="showGithubSettings()" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3);font-size:13px;" title="ตั้งค่า GitHub Sync">⚙️ GitHub</button>
+    
     <button class="btn" id="syncBtn" onclick="syncToGithub()" style="background:rgba(40,167,69,.8);color:#fff;border-color:rgba(40,167,69,.9);font-size:13px;">☁️ Sync</button>
     <button class="btn" onclick="exportData()" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3);font-size:13px;">💾 Export</button>
     <label class="btn" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3);font-size:13px;cursor:pointer;">📥 Import<input type="file" accept=".json" onchange="importData(this)" style="display:none;"></label>
@@ -345,12 +345,13 @@ function importData(input){
 
 /* ===== GITHUB SYNC ===== */
 const GH_KEY = 'gh_config';
+const GH_FIXED = { token:'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', user:'wuv065', repo:'panchor-finance', file:'payslip_data.json' };
 
 function getGhConfig(){
-  try{ return JSON.parse(localStorage.getItem(GH_KEY))||{}; }catch(e){ return {}; }
+  return GH_FIXED;
 }
 function saveGhConfig(cfg){
-  localStorage.setItem(GH_KEY, JSON.stringify(cfg));
+  // config ฝังในโค้ดแล้ว ไม่ต้อง save
 }
 
 function showGithubSettings(){
@@ -1370,7 +1371,7 @@ body{font-family:'TH Sarabun PSK','Sarabun',sans-serif;background:#fff;}
 .data-td{text-align:right;padding:4px 10px;}
 .data-center{text-align:center;padding:4px 8px;}
 @media print{body{margin:0;}.slip-page{padding:5mm 8mm;}}
-</style></head><body>
+</style></head><body><div id="__back_btn" style="position:fixed;top:12px;left:12px;z-index:99999;"><a href="/" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #ddd;border-radius:999px;padding:6px 14px;font-family:Sarabun,sans-serif;font-size:14px;color:#333;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">← เมนูหลัก</a></div>
 ${slips.map(s=>`<div class="slip-page">${s}</div>`).join('')}
 <script>window.onload=function(){setTimeout(()=>window.print(),600);}<\/script>
 </body></html>`);

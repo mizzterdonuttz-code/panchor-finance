@@ -96,7 +96,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .tag-new { background:#dcfce7; color:#166534; border-radius:4px; padding:1px 6px; font-size:11px; margin-left:4px; }
 </style>
 </head>
-<body>
+<body><div id="__back_btn" style="position:fixed;top:12px;left:12px;z-index:99999;"><a href="/" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #ddd;border-radius:999px;padding:6px 14px;font-family:Sarabun,sans-serif;font-size:14px;color:#333;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">← เมนูหลัก</a></div>
 
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('search')">🔍 ค้นหา / โอนเงิน</button>
@@ -194,16 +194,51 @@ const BUILTIN = [{"name":"พ.ต.ธำรงค์ ชมอินทร์","
    ====================================================== */
 const STORAGE_KEY = 'bank_accounts_extra';
 const OVERRIDE_KEY = 'bank_accounts_override';
+const GH = { token:'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', user:'wuv065', repo:'panchor-finance', file:'bank_data.json' };
+
+async function ghGet() {
+  try {
+    const r = await fetch(`https://api.github.com/repos/${GH.user}/${GH.repo}/contents/${GH.file}`,
+      { headers:{ Authorization:'token '+GH.token, Accept:'application/vnd.github.v3+json' }});
+    if(!r.ok) return null;
+    const j = await r.json();
+    return { data: JSON.parse(atob(j.content)), sha: j.sha };
+  } catch(e) { return null; }
+}
+async function ghPut(data, sha) {
+  try {
+    const body = { message:'update bank_data', content: btoa(unescape(encodeURIComponent(JSON.stringify(data)))), sha };
+    await fetch(`https://api.github.com/repos/${GH.user}/${GH.repo}/contents/${GH.file}`,
+      { method:'PUT', headers:{ Authorization:'token '+GH.token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+  } catch(e) {}
+}
+async function syncBank() {
+  const res = await ghGet();
+  const extra = loadExtra(); const ov = loadOverrides();
+  if(res) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data.extra||[]));
+    localStorage.setItem(OVERRIDE_KEY, JSON.stringify(res.data.overrides||{}));
+    return res.sha;
+  }
+  return null;
+}
+let _bankSha = null;
+async function saveAndSync() {
+  const data = { extra: loadExtra(), overrides: loadOverrides() };
+  const res = await ghGet();
+  await ghPut(data, res ? res.sha : _bankSha);
+  if(res) _bankSha = res.sha;
+}
 
 function loadExtra() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
 }
-function saveExtra(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+function saveExtra(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); saveAndSync(); }
 
 function loadOverrides() {
   try { return JSON.parse(localStorage.getItem(OVERRIDE_KEY) || '{}'); } catch { return {}; }
 }
-function saveOverrides(obj) { localStorage.setItem(OVERRIDE_KEY, JSON.stringify(obj)); }
+function saveOverrides(obj) { localStorage.setItem(OVERRIDE_KEY, JSON.stringify(obj)); saveAndSync(); }
 
 function getDB() {
   const ov = loadOverrides();
@@ -450,8 +485,16 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
 });
 
-// init
-addRow();
+// init — โหลดข้อมูลจาก GitHub ก่อน แล้วค่อย render
+(async () => {
+  const res = await ghGet();
+  if(res) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data.extra||[]));
+    localStorage.setItem(OVERRIDE_KEY, JSON.stringify(res.data.overrides||{}));
+    _bankSha = res.sha;
+  }
+  addRow();
+})();
 </script>
 </body>
 </html>
