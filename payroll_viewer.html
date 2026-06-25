@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>สรุปเงินเดือน</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun','Noto Sans Thai',sans-serif;background:#eef0f3;min-height:100vh}
+.topbar{background:#0d2240;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.topbar-title h1{font-size:15px;font-weight:700}
+.topbar-title p{font-size:11px;opacity:.55;margin-top:1px}
+.btn-admin{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:6px 14px;font-size:12px;font-family:inherit;cursor:pointer}
+.btn-admin:hover{background:rgba(255,255,255,.25)}
+.search-wrap{background:#fff;padding:10px 14px;border-bottom:2px solid #ddd;position:sticky;top:0;z-index:200}
+.month-row{display:flex;justify-content:center;margin-bottom:8px}
+.month-row select{border:1.5px solid #bbb;border-radius:8px;padding:6px 14px;font-size:14px;font-family:inherit;outline:none;background:#f8f8f8;color:#0d2240;font-weight:600;cursor:pointer;min-width:200px}
+.no-months{text-align:center;color:#e67e22;font-size:13px;font-weight:600;padding:4px 0 6px}
+.search-row{display:flex;gap:8px;max-width:700px;margin:0 auto}
+.search-row input{flex:1;border:1.5px solid #bbb;border-radius:8px;padding:9px 14px;font-size:14px;font-family:inherit;outline:none}
+.search-row input:focus{border-color:#0d2240}
+.search-row button{background:#0d2240;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:14px;font-family:inherit;font-weight:600;cursor:pointer}
+.search-row button:hover{background:#1e4070}
+.sug-wrap{max-width:700px;margin:0 auto;position:relative}
+.sug-box{position:absolute;top:4px;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.12);max-height:300px;overflow-y:auto;display:none;z-index:300}
+.sug-box.show{display:block}
+.sug-item{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:13px}
+.sug-item:hover{background:#f0f6ff}
+.sug-item:last-child{border-bottom:none}
+.sug-rank{background:#0d2240;color:#fff;font-size:10px;padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.sug-name{font-weight:600;flex:1}
+.sug-net{color:#555;font-size:12px;white-space:nowrap}
+/* PIN */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px 24px 24px;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.2);text-align:center}
+.modal-icon{font-size:36px;margin-bottom:8px}
+.modal-title{font-size:16px;font-weight:700;color:#0d2240;margin-bottom:3px}
+.modal-name{font-size:13px;color:#444;margin-bottom:6px;font-weight:600;line-height:1.5}
+.modal-hint{font-size:12px;color:#888;margin-bottom:16px}
+.pin-row{display:flex;gap:10px;justify-content:center;margin-bottom:8px}
+.pin-box{width:54px;height:58px;border:2px solid #bbb;border-radius:10px;font-size:24px;font-weight:700;text-align:center;font-family:inherit;outline:none;color:#0d2240}
+.pin-box:focus{border-color:#0d2240;box-shadow:0 0 0 3px rgba(13,34,64,.1)}
+.pin-box.err{border-color:#e74c3c;background:#fff5f5}
+.modal-err{font-size:12px;color:#e74c3c;min-height:18px;margin-bottom:12px}
+.modal-btns{display:flex;gap:8px}
+.btn-ok{flex:1;background:#0d2240;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-family:inherit;font-weight:700;cursor:pointer}
+.btn-ok:hover{background:#1e4070}
+.btn-no{flex:1;background:#eee;color:#444;border:none;border-radius:8px;padding:11px;font-size:14px;font-family:inherit;cursor:pointer}
+.btn-no:hover{background:#ddd}
+/* MAIN */
+.page-wrap{max-width:680px;margin:20px auto 50px;padding:0 14px}
+.tip{text-align:center;padding:60px 20px;color:#888;font-size:14px}
+.tip-icon{font-size:44px;margin-bottom:10px}
+/* SLIP */
+.slip{border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1)}
+.slip-header{background:linear-gradient(135deg,#0d2240 0%,#1e5fa8 100%);color:#fff;padding:20px 20px 18px}
+.slip-month{font-size:11px;color:rgba(255,255,255,.55);letter-spacing:1px;margin-bottom:5px}
+.slip-name{font-size:20px;font-weight:700;margin-bottom:6px}
+.slip-meta{display:flex;gap:14px;flex-wrap:wrap}
+.slip-meta-item{font-size:12px;color:rgba(255,255,255,.6)}
+.slip-meta-item strong{color:rgba(255,255,255,.95)}
+.sum-band{background:#fff;display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:2px solid #eee}
+.sum-cell{padding:14px 10px;text-align:center;border-right:1px solid #eee}
+.sum-cell:last-child{border-right:none;background:#f0f7ff}
+.sum-label{font-size:11px;color:#888;margin-bottom:4px}
+.sum-val{font-size:16px;font-weight:700}
+.sum-val.g{color:#1a7a4a}
+.sum-val.r{color:#c0392b}
+.sum-val.n{color:#0d2240;font-size:19px}
+.section{background:#fff;margin-top:2px}
+.sec-title{padding:11px 16px 7px;font-size:11px;font-weight:700;color:#999;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center}
+.sec-total{font-size:13px;font-weight:700;color:#333;letter-spacing:0}
+.row-item{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid #f5f5f5;font-size:14px}
+.row-item:last-child{border-bottom:none}
+.row-label{color:#333}
+.row-val{font-weight:600}
+.row-val.g{color:#1a7a4a}
+.row-val.r{color:#c0392b}
+/* ADMIN */
+.admin-panel{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;display:none;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
+.admin-panel.show{display:flex}
+.admin-box{background:#fff;border-radius:14px;padding:20px;max-width:500px;width:100%;margin:auto}
+.admin-box h2{font-size:15px;font-weight:700;color:#0d2240;margin-bottom:14px}
+.admin-section{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid #eee}
+.admin-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.admin-section h3{font-size:11px;font-weight:700;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.upload-area{border:2px dashed #aac;border-radius:10px;padding:18px;text-align:center;cursor:pointer;background:#f8f9ff;transition:border-color .2s}
+.upload-area:hover,.upload-area.drag{border-color:#0d2240;background:#eef2ff}
+.upload-icon{font-size:28px;margin-bottom:4px}
+.upload-text{font-size:13px;color:#555}
+.upload-text strong{color:#0d2240}
+.progress-wrap{margin-top:10px;display:none}
+.progress-bar{height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden;margin-bottom:5px}
+.progress-fill{height:100%;background:#0d2240;border-radius:4px;transition:width .2s;width:0}
+.progress-text{font-size:12px;color:#555;text-align:center;min-height:16px}
+.month-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+.month-item{display:flex;align-items:center;justify-content:space-between;background:#f5f5f5;border-radius:8px;padding:7px 12px;font-size:13px}
+.month-item-name{font-weight:600;color:#0d2240}
+.month-item-count{color:#888;font-size:12px}
+.btn-delete{background:none;border:none;color:#c0392b;cursor:pointer;font-size:15px;padding:2px 6px}
+.btn-delete:hover{background:#fee;border-radius:4px}
+.btn-clear{background:none;border:1px solid #c0392b;color:#c0392b;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+.btn-clear:hover{background:#fee}
+.cfg-label{font-size:11px;color:#888;margin-bottom:3px;margin-top:8px}
+.cfg-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cfg-input{border:1.5px solid #ccc;border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none;width:100%}
+.cfg-input:focus{border-color:#0d2240}
+.sync-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.btn-pull{background:#1a5c8a;color:#fff;border:none;border-radius:8px;padding:12px 8px;font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;line-height:1.4;text-align:center}
+.btn-pull:hover{background:#154a70}
+.btn-pull:disabled,.btn-push:disabled{background:#aaa;cursor:not-allowed}
+.btn-push{background:#2a7d4f;color:#fff;border:none;border-radius:8px;padding:12px 8px;font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;line-height:1.4;text-align:center}
+.btn-push:hover{background:#1e6040}
+.btn-push small,.btn-pull small{display:block;font-weight:400;font-size:11px;opacity:.85}
+.msg{font-size:12px;padding:8px 12px;border-radius:6px;margin-top:8px;line-height:1.5}
+.msg.ok{background:#e8f8ee;color:#1a6b3c}
+.msg.err{background:#fee;color:#c0392b}
+.admin-footer{display:flex;justify-content:flex-end;margin-top:4px}
+.btn-close-admin{background:#eee;color:#333;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-family:inherit;cursor:pointer}
+.btn-close-admin:hover{background:#ddd}
+</style>
+</head>
+<body><div id="__back_btn" style="position:fixed;top:12px;left:12px;z-index:99999;"><a href="/panchor-finance/" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:999px;padding:5px 12px;font-family:Sarabun,sans-serif;font-size:13px;text-decoration:none;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">← เมนูหลัก</a></div>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <h1>🪖 สรุปเงินเดือน กำลังพล</h1>
+    <p>กองพันทหารช่างเครื่องมือพิเศษ กองพลทหารช่าง</p>
+  </div>
+  <button class="btn-admin" onclick="openAdmin()">⚙️ จัดการ</button>
+</div>
+
+<div class="search-wrap">
+  <div class="month-row" id="monthRow">
+    <select id="monthSel" onchange="onMonthChange()"></select>
+  </div>
+  <div class="no-months" id="noMonths" style="display:none">ยังไม่มีข้อมูล — กด ⚙️ จัดการ เพื่ออัปโหลด Excel</div>
+  <div class="search-row">
+    <input type="text" id="inp" placeholder="พิมพ์ชื่อหรือนามสกุล..." autocomplete="off"/>
+    <button onclick="doSearch()">ค้นหา</button>
+  </div>
+  <div class="sug-wrap"><div class="sug-box" id="sugBox"></div></div>
+</div>
+
+<div class="page-wrap">
+  <div class="tip" id="tip"><div class="tip-icon">🔍</div>เลือกเดือน → ค้นหาชื่อ → กรอก 4 ตัวท้ายเลขประชาชน</div>
+  <div id="result"></div>
+</div>
+
+<!-- PIN -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-icon">🔐</div>
+    <div class="modal-title">ยืนยันตัวตน</div>
+    <div class="modal-name" id="modalName"></div>
+    <div class="modal-hint">กรอก <strong>4 ตัวท้าย</strong> เลขประจำตัวประชาชน</div>
+    <div class="pin-row">
+      <input class="pin-box" id="p0" maxlength="1" inputmode="numeric"/>
+      <input class="pin-box" id="p1" maxlength="1" inputmode="numeric"/>
+      <input class="pin-box" id="p2" maxlength="1" inputmode="numeric"/>
+      <input class="pin-box" id="p3" maxlength="1" inputmode="numeric"/>
+    </div>
+    <div class="modal-err" id="pinErr"></div>
+    <div class="modal-btns">
+      <button class="btn-no" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn-ok" onclick="confirmPin()">ยืนยัน</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="admin-panel" id="adminPanel" onclick="if(event.target===this)closeAdmin()">
+  <div class="admin-box">
+    <h2>⚙️ จัดการข้อมูลเงินเดือน</h2>
+
+    <div class="admin-section">
+      <h3>📊 อัปโหลด Excel เดือนใหม่</h3>
+      <div class="upload-area" id="uploadArea"
+        onclick="document.getElementById('xlsxInput').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');handleFiles(event.dataTransfer.files)">
+        <input type="file" id="xlsxInput" accept=".xlsx,.xls" style="display:none" onchange="handleFiles(this.files)"/>
+        <div class="upload-icon">📂</div>
+        <div class="upload-text">คลิกหรือลาก <strong>ไฟล์ Excel เงินเดือน</strong> มาวางที่นี่</div>
+      </div>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText"></div>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>📅 เดือนที่มีในระบบ</h3>
+      <div class="month-list" id="adminMonthList"></div>
+      <button class="btn-clear" onclick="clearAllData()">🗑 ล้างข้อมูลทั้งหมด</button>
+    </div>
+
+    <div class="admin-section">
+      <h3>☁️ ซิงค์กับ GitHub Pages</h3>
+      <div class="cfg-label">GitHub Owner / Repo</div>
+      <div class="cfg-row">
+        <input type="text" id="cfgOwner" class="cfg-input" placeholder="username"/>
+        <input type="text" id="cfgRepo" class="cfg-input" placeholder="repo เช่น payslip"/>
+      </div>
+      <div class="cfg-label">Personal Access Token (repo scope)</div>
+      <input type="password" id="cfgToken" class="cfg-input" style="width:100%;margin-top:0" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"/>
+      <div class="sync-btns">
+        <button class="btn-pull" id="btnPull" onclick="pullFromGitHub()">
+          ⬇️ ดึงข้อมูล<br><small>ใช้เมื่อย้ายเครื่อง</small>
+        </button>
+        <button class="btn-push" id="btnPush" onclick="pushToGitHub()">
+          ⬆️ Push ขึ้น GitHub<br><small>บันทึก + อัปเดต viewer</small>
+        </button>
+      </div>
+      <div id="pushMsg"></div>
+    </div>
+
+    <div class="admin-footer">
+      <button class="btn-close-admin" onclick="closeAdmin()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+// MONTHS = { "label": [ {h,name,level,grade,salary,income,deduct,total_income,total_deduct,net}, ... ] }
+let MONTHS = {};
+try{ const s=localStorage.getItem('payroll_excel_months'); if(s) MONTHS=JSON.parse(s); }catch(e){}
+function saveLocal(){ try{ localStorage.setItem('payroll_excel_months',JSON.stringify(MONTHS)); }catch(e){} }
+
+// ── UI ────────────────────────────────────────────────────────────────
+let curPersons = [];
+const inp=document.getElementById('inp'), sugBox=document.getElementById('sugBox');
+const result=document.getElementById('result'), tip=document.getElementById('tip');
+const overlay=document.getElementById('overlay'), pinErr=document.getElementById('pinErr');
+const modalName=document.getElementById('modalName'), monthSel=document.getElementById('monthSel');
+const boxes=[0,1,2,3].map(i=>document.getElementById('p'+i));
+
+function initMonthUI(){
+  const keys=Object.keys(MONTHS);
+  const nm=document.getElementById('noMonths'), mr=document.getElementById('monthRow');
+  if(!keys.length){ mr.style.display='none'; nm.style.display='block'; curPersons=[]; return; }
+  nm.style.display='none'; mr.style.display='flex';
+  monthSel.innerHTML=keys.slice().reverse().map(k=>`<option value="${k}">${k}</option>`).join('');
+  onMonthChange();
+}
+function onMonthChange(){
+  const k=monthSel.value;
+  curPersons=MONTHS[k]||[];
+  inp.value=''; sugBox.classList.remove('show'); result.innerHTML='';
+  tip.style.display='block';
+  tip.innerHTML='<div class="tip-icon">🔍</div>ค้นหาชื่อ → กรอก 4 ตัวท้ายเลขประชาชน';
+}
+initMonthUI();
+
+// ── SEARCH ────────────────────────────────────────────────────────────
+const norm=s=>s.replace(/\s+/g,'').toLowerCase();
+const fmt=v=>v!=null?Number(v).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}):'0.00';
+
+function search(q){
+  if(!q) return [];
+  const nq=norm(q);
+  return curPersons.map((p,i)=>({...p,i})).filter(p=>norm(p.name).includes(nq)).slice(0,8);
+}
+function renderSug(list){
+  if(!list.length){ sugBox.classList.remove('show'); return; }
+  sugBox.innerHTML=list.map(p=>{
+    const d=document.createElement('div'); d.className='sug-item'; d.dataset.idx=p.i;
+    const parts=p.name.split(' ');
+    d.innerHTML=`<span class="sug-rank">${parts[0]}</span><span class="sug-name">${parts.slice(1).join(' ')}</span><span class="sug-net">${fmt(p.net)}</span>`;
+    return d.outerHTML;
+  }).join('');
+  sugBox.querySelectorAll('.sug-item').forEach(el=>el.addEventListener('click',()=>askPin(parseInt(el.dataset.idx))));
+  sugBox.classList.add('show');
+}
+function doSearch(){
+  const list=search(inp.value.trim()); sugBox.classList.remove('show');
+  if(!list.length){ tip.style.display='block'; tip.innerHTML='<div class="tip-icon">❌</div>ไม่พบชื่อนี้ในระบบ'; result.innerHTML=''; return; }
+  if(list.length===1) askPin(list[0].i); else renderSug(list);
+}
+inp.addEventListener('input',()=>{ const q=inp.value.trim(); if(!q){sugBox.classList.remove('show');return;} renderSug(search(q)); });
+inp.addEventListener('keydown',e=>{ if(e.key==='Enter')doSearch(); if(e.key==='Escape')sugBox.classList.remove('show'); });
+document.addEventListener('click',e=>{ if(!e.target.closest('.search-wrap'))sugBox.classList.remove('show'); });
+
+// ── PIN ───────────────────────────────────────────────────────────────
+let pi=null,fc=0,lk=false;
+boxes.forEach((box,i)=>{
+  box.addEventListener('input',()=>{ box.value=box.value.replace(/[^0-9]/g,'').slice(-1); if(box.value&&i<3)boxes[i+1].focus(); if(boxes.map(b=>b.value).join('').length===4)setTimeout(confirmPin,80); });
+  box.addEventListener('keydown',e=>{ if(e.key==='Backspace'&&!box.value&&i>0)boxes[i-1].focus(); if(e.key==='Enter')confirmPin(); if(e.key==='Escape')closeModal(); });
+  box.addEventListener('paste',e=>{ e.preventDefault(); const txt=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,4); txt.split('').forEach((ch,j)=>{if(boxes[j])boxes[j].value=ch;}); if(txt.length===4)setTimeout(confirmPin,80); else if(boxes[txt.length])boxes[txt.length].focus(); });
+});
+function askPin(idx){
+  sugBox.classList.remove('show'); pi=idx; fc=0; lk=false;
+  modalName.textContent=curPersons[idx].name;
+  boxes.forEach(b=>{b.value='';b.className='pin-box';b.disabled=false;});
+  pinErr.textContent=''; overlay.classList.add('show'); setTimeout(()=>boxes[0].focus(),120);
+}
+async function sha256(s){
+  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+async function confirmPin(){
+  if(lk)return;
+  const pin=boxes.map(b=>b.value).join('');
+  if(pin.length<4){pinErr.textContent='กรุณากรอกให้ครบ 4 หลัก';return;}
+  const p=curPersons[pi];
+  const h=await sha256(p.name+'|'+pin);
+  if(h===p.h){closeModal();showSlip(p);}
+  else{
+    fc++; boxes.forEach(b=>{b.value='';b.className='pin-box err';});
+    if(fc>=5){lk=true;pinErr.textContent='กรอกผิดเกิน 5 ครั้ง';boxes.forEach(b=>b.disabled=true);setTimeout(closeModal,2000);}
+    else{pinErr.textContent=`เลขประชาชนไม่ถูกต้อง (${fc}/5)`;setTimeout(()=>{boxes.forEach(b=>b.className='pin-box');boxes[0].focus();},600);}
+  }
+}
+function closeModal(){overlay.classList.remove('show');pi=null;}
+
+// ── SHOW SLIP ─────────────────────────────────────────────────────────
+function showSlip(p){
+  tip.style.display='none';
+  const incRows=Object.entries(p.income).map(([k,v])=>
+    `<div class="row-item"><span class="row-label">${k}</span><span class="row-val g">${fmt(v)}</span></div>`).join('');
+  const dedRows=Object.entries(p.deduct).map(([k,v])=>
+    `<div class="row-item"><span class="row-label">${k}</span><span class="row-val r">- ${fmt(v)}</span></div>`).join('')
+    ||'<div class="row-item" style="color:#aaa;font-size:13px">— ไม่มีรายการ —</div>';
+
+  result.innerHTML=`
+  <div class="slip">
+    <div class="slip-header">
+      <div class="slip-month">📅 ${monthSel.value}</div>
+      <div class="slip-name">${p.name}</div>
+      <div class="slip-meta">
+        <span class="slip-meta-item">ระดับ <strong>${p.level||'-'}</strong></span>
+        <span class="slip-meta-item">ชั้น <strong>${p.grade||'-'}</strong></span>
+        <span class="slip-meta-item">เงินเดือน <strong>${fmt(p.salary)}</strong> บาท</span>
+      </div>
+    </div>
+    <div class="sum-band">
+      <div class="sum-cell"><div class="sum-label">รวมรายรับ</div><div class="sum-val g">${fmt(p.total_income)}</div></div>
+      <div class="sum-cell"><div class="sum-label">รวมหัก+หนี้สิน</div><div class="sum-val r">${fmt(p.total_deduct)}</div></div>
+      <div class="sum-cell"><div class="sum-label">💰 รับสุทธิ</div><div class="sum-val n">${fmt(p.net)}</div></div>
+    </div>
+    <div class="section">
+      <div class="sec-title"><span>💚 รายการรับ</span><span class="sec-total">${fmt(p.total_income)}</span></div>
+      ${incRows}
+    </div>
+    <div class="section">
+      <div class="sec-title"><span>🔴 รายการหัก + หนี้สิน</span><span class="sec-total">${fmt(p.total_deduct)}</span></div>
+      ${dedRows}
+    </div>
+  </div>`;
+}
+
+// ── EXCEL PARSE ───────────────────────────────────────────────────────
+const INCOME_COLS=['เงินเดือน','พสร','ประจำตำแหน่ง','พชค.'];
+const ALL_DEDUCT=['กบข.','สะสมส่วนเพิ่ม','ภาษี','กยศ.',
+  'ณป.ทบ.','ฌป.พลช.','ค่าศพ คมศ.','อทบฝาก','อทบกู้','อทบพิเศษ','อทบ เคหะ',
+  'ออมทรัพย์','กองทุนหมู่บ้าน','กรุงไทย','ธอส.','ธออมสิน','ไฟฟ้า','ประปา',
+  'ค่าขยะ','เคเบิ้ล','แฟลต','อื่น ๆ','รสก.','สก.ร้านค้า','สกกองพัน',
+  'กองทุนชุมชนพล.ช.','กองรุ่น นนส.','สกกองร้อย','AIA','เงินรุ่น นรช.',
+  'ส่งทายาท','เงินรุ่น พ.ต.ยงยุทธ','ไฟฟ้า 1','ประปา 1','เคเบิล 1','ค่าขยะ 1','แฟลต 1','นิตยาสาร'];
+
+function setProgress(pct,text){
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressText').textContent=text;
+  document.getElementById('progressWrap').style.display='block';
+}
+
+async function parseExcel(file){
+  setProgress(10,'กำลังอ่านไฟล์...');
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:'array'});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+  setProgress(40,`พบ ${rows.length} แถว — กำลังประมวลผล...`);
+
+  // detect month from filename or first row
+  const monthLabel=file.name.replace(/\.xlsx?$/i,'').trim() || 'ไม่ระบุเดือน';
+
+  const persons=[];
+  for(const row of rows){
+    const pid=String(row['เลขประจำตัวประชาชน']||'').trim().replace(/\.0$/,'');
+    if(!pid||pid==='') continue;
+    const rank=String(row['ยศ']||'').trim();
+    const fname=String(row['ชื่อ']||'').trim();
+    const lname=String(row['นามสกุล']||'').trim();
+    if(!fname&&!lname) continue;
+
+    const name=`${rank} ${fname} ${lname}`.trim();
+    const last4=pid.slice(-4);
+    const h=await sha256(name+'|'+last4);
+
+    const n=c=>{ const v=row[c]; return v!==''&&v!=null?Number(v)||0:0; };
+    const income=Object.fromEntries(INCOME_COLS.map(c=>[c,n(c)]).filter(([,v])=>v>0));
+    const deduct=Object.fromEntries(ALL_DEDUCT.map(c=>[c,n(c)]).filter(([,v])=>v>0));
+    const total_income=n('รวมเบิก')||Object.values(income).reduce((a,b)=>a+b,0);
+    const total_deduct=Object.values(deduct).reduce((a,b)=>a+b,0);
+
+    persons.push({
+      h, name,
+      level:String(row['ระดับ']||'').trim(),
+      grade:String(row['ชั้น']||'').trim(),
+      salary:n('เงินเดือน'),
+      income, deduct,
+      total_income,
+      total_deduct,
+      net:Math.round((total_income-total_deduct)*100)/100,
+    });
+  }
+
+  setProgress(100,`✅ พบ ${persons.length} คน — เดือน: ${monthLabel}`);
+  return {persons, label:monthLabel};
+}
+
+async function handleFiles(files){
+  if(!files||!files[0]) return;
+  const file=files[0];
+  document.getElementById('xlsxInput').value='';
+  try{
+    const {persons,label}=await parseExcel(file);
+    MONTHS[label]=persons;
+    saveLocal(); initMonthUI(); renderAdminMonthList();
+
+    const owner=localStorage.getItem('gh_owner')||'mizzterdonuttz-code';
+    const repo=localStorage.getItem('gh_repo')||'panchor-finance';
+    const token=localStorage.getItem('gh_token')||document.getElementById('cfgToken').value.trim();
+    if(owner&&repo&&token){
+      await doPush(owner,repo,token);
+    } else {
+      setProgress(100,`✅ "${label}" บันทึกแล้ว — กด ⬆️ Push เพื่ออัปเดต GitHub`);
+    }
+  }catch(e){
+    document.getElementById('progressWrap').style.display='none';
+    alert('เกิดข้อผิดพลาด:\n'+e.message); console.error(e);
+  }
+}
+
+// ── GITHUB ────────────────────────────────────────────────────────────
+function toB64(str){
+  const bytes=new TextEncoder().encode(str); let bin='';
+  bytes.forEach(b=>bin+=String.fromCharCode(b)); return btoa(bin);
+}
+async function ghGetBranch(owner,repo,token){
+  const r=await fetch(`https://api.github.com/repos/${owner}/${repo}`,
+    {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+  if(!r.ok) throw new Error(`repo ไม่พบ: ${owner}/${repo}`);
+  return (await r.json()).default_branch||'main';
+}
+async function ghPut(owner,repo,path,token,b64content,message,branch){
+  // get existing sha
+  let sha='';
+  const gr=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+    {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+  if(gr.ok) sha=(await gr.json()).sha||'';
+  const body={message,content:b64content,branch}; if(sha) body.sha=sha;
+  const r=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+    {method:'PUT',headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json','Content-Type':'application/json'},
+     body:JSON.stringify(body)});
+  if(!r.ok){const e=await r.json();throw new Error(`${r.status}: ${e.message}`);}
+  return r.json();
+}
+
+async function doPush(owner,repo,token){
+  const msgEl=document.getElementById('pushMsg');
+  const btnP=document.getElementById('btnPush'), btnL=document.getElementById('btnPull');
+  btnP.disabled=true; btnL.disabled=true;
+  msgEl.className='msg ok'; msgEl.textContent='กำลัง push...';
+  try{
+    const now=new Date().toLocaleDateString('th-TH');
+    const branch=await ghGetBranch(owner,repo,token);
+
+    setProgress(80,'push data.json...');
+    msgEl.textContent='push data.json...';
+    await ghPut(owner,repo,'data.json',token,toB64(JSON.stringify(MONTHS)),`sync ${now}`,branch);
+
+    setProgress(92,'push index.html...');
+    msgEl.textContent='push index.html...';
+    await ghPut(owner,repo,'index.html',token,toB64(buildViewerHTML(owner,repo)),`update viewer ${now}`,branch);
+
+    setProgress(100,'✅ Push สำเร็จ!');
+    msgEl.className='msg ok';
+    msgEl.innerHTML=`✅ Push สำเร็จ!<br>🌐 <a href="https://${owner}.github.io/${repo}/" target="_blank">https://${owner}.github.io/${repo}/</a>`;
+  }catch(e){
+    msgEl.className='msg err'; msgEl.textContent='❌ '+e.message;
+    setProgress(0,'');
+  }
+  btnP.disabled=false; btnL.disabled=false;
+}
+
+async function pushToGitHub(){
+  const owner=document.getElementById('cfgOwner').value.trim();
+  const repo=document.getElementById('cfgRepo').value.trim();
+  const token=document.getElementById('cfgToken').value.trim();
+  const msgEl=document.getElementById('pushMsg');
+  if(!owner||!repo||!token){msgEl.className='msg err';msgEl.textContent='กรุณากรอก owner, repo และ token ให้ครบ';return;}
+  if(!Object.keys(MONTHS).length){msgEl.className='msg err';msgEl.textContent='ยังไม่มีข้อมูล';return;}
+  saveCfg(); await doPush(owner,repo,token);
+}
+
+async function pullFromGitHub(){
+  const owner=document.getElementById('cfgOwner').value.trim();
+  const repo=document.getElementById('cfgRepo').value.trim();
+  const token=document.getElementById('cfgToken').value.trim();
+  const msgEl=document.getElementById('pushMsg');
+  if(!owner||!repo||!token){msgEl.className='msg err';msgEl.textContent='กรุณากรอก owner, repo และ token ให้ครบ';return;}
+  saveCfg();
+  const btnP=document.getElementById('btnPush'), btnL=document.getElementById('btnPull');
+  btnP.disabled=true; btnL.disabled=true;
+  msgEl.className='msg ok'; msgEl.textContent='กำลังดึงข้อมูล...';
+  try{
+    const r=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/data.json`,
+      {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+    if(!r.ok) throw new Error('ไม่พบ data.json บน repo (ต้อง Push ก่อน)');
+    const file=await r.json();
+    const decoded=atob(file.content.replace(/\n/g,''));
+    const bytes=new Uint8Array(decoded.length);
+    for(let i=0;i<decoded.length;i++) bytes[i]=decoded.charCodeAt(i);
+    MONTHS=JSON.parse(new TextDecoder().decode(bytes));
+    saveLocal(); initMonthUI(); renderAdminMonthList();
+    msgEl.className='msg ok'; msgEl.textContent=`✅ ดึงสำเร็จ! ${Object.keys(MONTHS).length} เดือน`;
+  }catch(e){msgEl.className='msg err';msgEl.textContent='❌ '+e.message;}
+  btnP.disabled=false; btnL.disabled=false;
+}
+
+// auto-sync on load
+(async()=>{
+  const owner=localStorage.getItem('gh_owner')||'mizzterdonuttz-code';
+  const repo=localStorage.getItem('gh_repo')||'panchor-finance';
+  if(!owner||!repo||Object.keys(MONTHS).length) return;
+  try{
+    const r=await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/data.json`);
+    if(!r.ok) return;
+    MONTHS=await r.json(); saveLocal(); initMonthUI();
+  }catch(e){}
+})();
+
+function saveCfg(){
+  localStorage.setItem('gh_owner',document.getElementById('cfgOwner').value.trim());
+  localStorage.setItem('gh_repo',document.getElementById('cfgRepo').value.trim());
+  const t=document.getElementById('cfgToken').value.trim();
+  if(t) localStorage.setItem('gh_token',t);
+}
+function loadCfg(){
+  document.getElementById('cfgOwner').value=localStorage.getItem('gh_owner')||'mizzterdonuttz-code';
+  document.getElementById('cfgRepo').value=localStorage.getItem('gh_repo')||'panchor-finance';
+  document.getElementById('cfgToken').value=localStorage.getItem('gh_token')||'';
+}
+
+// ── ADMIN UI ──────────────────────────────────────────────────────────
+function openAdmin(){
+  renderAdminMonthList(); loadCfg();
+  document.getElementById('progressWrap').style.display='none';
+  document.getElementById('adminPanel').classList.add('show');
+}
+function closeAdmin(){document.getElementById('adminPanel').classList.remove('show');}
+function renderAdminMonthList(){
+  const el=document.getElementById('adminMonthList');
+  const keys=Object.keys(MONTHS);
+  if(!keys.length){el.innerHTML='<div style="color:#aaa;font-size:13px;text-align:center;padding:8px">ยังไม่มีข้อมูล</div>';return;}
+  el.innerHTML=keys.map(k=>`
+    <div class="month-item">
+      <span class="month-item-name">📅 ${k}</span>
+      <span class="month-item-count">${MONTHS[k].length} คน</span>
+      <button class="btn-delete" onclick="deleteMonth(${JSON.stringify(k)})">🗑</button>
+    </div>`).join('');
+}
+function deleteMonth(k){if(!confirm(`ลบเดือน "${k}"?`))return;delete MONTHS[k];saveLocal();initMonthUI();renderAdminMonthList();}
+function clearAllData(){
+  if(!confirm('ล้างข้อมูลทั้งหมด?'))return;
+  localStorage.removeItem('payroll_excel_months');
+  MONTHS={}; saveLocal(); initMonthUI(); renderAdminMonthList();
+}
+
+// ── VIEWER HTML ───────────────────────────────────────────────────────
+function buildViewerHTML(owner,repo){
+  const mj=JSON.stringify(MONTHS);
+  const keys=Object.keys(MONTHS);
+  const opts=keys.slice().reverse().map(k=>`<option value="${k}">${k}</option>`).join('');
+  return `<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>สรุปเงินเดือน</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Sarabun','Noto Sans Thai',sans-serif;background:#eef0f3;min-height:100vh}.tb{background:#0d2240;color:#fff;padding:14px 16px;text-align:center}.tb h1{font-size:17px;font-weight:700}.tb p{font-size:12px;opacity:.6;margin-top:2px}.sw{background:#fff;padding:10px 14px;border-bottom:2px solid #ddd;position:sticky;top:0;z-index:200}.mr{display:flex;justify-content:center;margin-bottom:8px}.mr select{border:1.5px solid #bbb;border-radius:8px;padding:6px 14px;font-size:14px;font-family:inherit;outline:none;background:#f8f8f8;color:#0d2240;font-weight:600;cursor:pointer;min-width:200px}.sr{display:flex;gap:8px;max-width:700px;margin:0 auto}.sr input{flex:1;border:1.5px solid #bbb;border-radius:8px;padding:9px 14px;font-size:14px;font-family:inherit;outline:none}.sr input:focus{border-color:#0d2240}.sr button{background:#0d2240;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:14px;font-family:inherit;font-weight:600;cursor:pointer}.sgw{max-width:700px;margin:0 auto;position:relative}.sgb{position:absolute;top:4px;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.12);max-height:300px;overflow-y:auto;display:none;z-index:300}.sgb.show{display:block}.si{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:13px}.si:hover{background:#f0f6ff}.si:last-child{border-bottom:none}.sk{background:#0d2240;color:#fff;font-size:10px;padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0}.sn{font-weight:600;flex:1}.sv{color:#555;font-size:12px;white-space:nowrap}.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center}.ov.show{display:flex}.mo{background:#fff;border-radius:16px;padding:28px 24px 24px;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.2);text-align:center}.mi{font-size:36px;margin-bottom:8px}.mt{font-size:16px;font-weight:700;color:#0d2240;margin-bottom:3px}.mn{font-size:13px;color:#444;margin-bottom:6px;font-weight:600;line-height:1.5}.mh{font-size:12px;color:#888;margin-bottom:16px}.pr{display:flex;gap:10px;justify-content:center;margin-bottom:8px}.pb{width:54px;height:58px;border:2px solid #bbb;border-radius:10px;font-size:24px;font-weight:700;text-align:center;font-family:inherit;outline:none;color:#0d2240}.pb:focus{border-color:#0d2240}.pb.err{border-color:#e74c3c;background:#fff5f5}.me{font-size:12px;color:#e74c3c;min-height:18px;margin-bottom:12px}.mb{display:flex;gap:8px}.bok{flex:1;background:#0d2240;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-family:inherit;font-weight:700;cursor:pointer}.bno{flex:1;background:#eee;color:#444;border:none;border-radius:8px;padding:11px;font-size:14px;font-family:inherit;cursor:pointer}.pw{max-width:680px;margin:20px auto 50px;padding:0 14px}.tip{text-align:center;padding:60px 20px;color:#888;font-size:14px}.ti{font-size:44px;margin-bottom:10px}.sl{border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1)}.sh{background:linear-gradient(135deg,#0d2240,#1e5fa8);color:#fff;padding:20px 20px 18px}.sm{font-size:11px;color:rgba(255,255,255,.55);letter-spacing:1px;margin-bottom:5px}.sname{font-size:20px;font-weight:700;margin-bottom:6px}.smeta{display:flex;gap:14px;flex-wrap:wrap}.smi{font-size:12px;color:rgba(255,255,255,.6)}.smi strong{color:rgba(255,255,255,.95)}.sb{background:#fff;display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:2px solid #eee}.sc{padding:14px 10px;text-align:center;border-right:1px solid #eee}.sc:last-child{border-right:none;background:#f0f7ff}.sl2{font-size:11px;color:#888;margin-bottom:4px}.sv2{font-size:16px;font-weight:700}.sv2.g{color:#1a7a4a}.sv2.r{color:#c0392b}.sv2.n{color:#0d2240;font-size:19px}.sec{background:#fff;margin-top:2px}.stit{padding:11px 16px 7px;font-size:11px;font-weight:700;color:#999;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center}.stot{font-size:13px;font-weight:700;color:#333;letter-spacing:0}.ri{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid #f5f5f5;font-size:14px}.ri:last-child{border-bottom:none}.rv{font-weight:600}.rv.g{color:#1a7a4a}.rv.r{color:#c0392b}</style></head><body><div id="__back_btn" style="position:fixed;top:12px;left:12px;z-index:99999;"><a href="/panchor-finance/" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:999px;padding:5px 12px;font-family:Sarabun,sans-serif;font-size:13px;text-decoration:none;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">← เมนูหลัก</a></div>
+<div class="tb"><h1>🪖 สรุปเงินเดือน กำลังพล</h1><p>กองพันทหารช่างเครื่องมือพิเศษ กองพลทหารช่าง</p></div>
+<div class="sw"><div class="mr"><select id="ms" onchange="omc()">${opts}</select></div><div class="sr"><input type="text" id="inp" placeholder="พิมพ์ชื่อหรือนามสกุล..." autocomplete="off"/><button onclick="ds()">ค้นหา</button></div><div class="sgw"><div class="sgb" id="sgb"></div></div></div>
+<div class="pw"><div class="tip" id="tip"><div class="ti">🔍</div>เลือกเดือน → ค้นหาชื่อ → กรอก 4 ตัวท้ายเลขประชาชน</div><div id="res"></div></div>
+<div class="ov" id="ov" onclick="if(event.target===this)cm()"><div class="mo"><div class="mi">🔐</div><div class="mt">ยืนยันตัวตน</div><div class="mn" id="mn"></div><div class="mh">กรอก <strong>4 ตัวท้าย</strong> เลขประจำตัวประชาชน</div><div class="pr"><input class="pb" id="p0" maxlength="1" inputmode="numeric"/><input class="pb" id="p1" maxlength="1" inputmode="numeric"/><input class="pb" id="p2" maxlength="1" inputmode="numeric"/><input class="pb" id="p3" maxlength="1" inputmode="numeric"/></div><div class="me" id="pe"></div><div class="mb"><button class="bno" onclick="cm()">ยกเลิก</button><button class="bok" onclick="cp()">ยืนยัน</button></div></div></div>
+<script>
+const M=${mj};
+const inp=document.getElementById('inp'),sgb=document.getElementById('sgb'),res=document.getElementById('res'),tip=document.getElementById('tip'),ov=document.getElementById('ov'),pe=document.getElementById('pe'),mn=document.getElementById('mn'),ms=document.getElementById('ms');
+const bs=[0,1,2,3].map(i=>document.getElementById('p'+i));
+let cp2=[],pi=null,fc=0,lk=false;
+function omc(){const k=ms.value;cp2=M[k]||[];inp.value='';sgb.classList.remove('show');res.innerHTML='';tip.style.display='block';}
+omc();
+const nm=s=>s.replace(/\\s+/g,'').toLowerCase();
+const fmt=v=>v!=null?Number(v).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}):'0.00';
+function sr2(q){if(!q)return[];const nq=nm(q);return cp2.map((p,i)=>({...p,i})).filter(p=>nm(p.name).includes(nq)).slice(0,8);}
+function rs(l){if(!l.length){sgb.classList.remove('show');return;}sgb.innerHTML=l.map(p=>{const d=document.createElement('div');d.className='si';d.dataset.idx=p.i;const pts=p.name.split(' ');d.innerHTML='<span class=\\'sk\\'>'+pts[0]+'</span><span class=\\'sn\\'>'+pts.slice(1).join(' ')+'</span><span class=\\'sv\\'>'+fmt(p.net)+'</span>';return d.outerHTML;}).join('');sgb.querySelectorAll('.si').forEach(el=>el.addEventListener('click',()=>ap(parseInt(el.dataset.idx))));sgb.classList.add('show');}
+function ds(){const l=sr2(inp.value.trim());sgb.classList.remove('show');if(!l.length){tip.style.display='block';tip.innerHTML='<div class=\\'ti\\'>❌</div>ไม่พบชื่อ';res.innerHTML='';return;}if(l.length===1)ap(l[0].i);else rs(l);}
+inp.addEventListener('input',()=>{const q=inp.value.trim();if(!q){sgb.classList.remove('show');return;}rs(sr2(q));});
+inp.addEventListener('keydown',e=>{if(e.key==='Enter')ds();if(e.key==='Escape')sgb.classList.remove('show');});
+document.addEventListener('click',e=>{if(!e.target.closest('.sw'))sgb.classList.remove('show');});
+bs.forEach((b,i)=>{b.addEventListener('input',()=>{b.value=b.value.replace(/[^0-9]/g,'').slice(-1);if(b.value&&i<3)bs[i+1].focus();if(bs.map(x=>x.value).join('').length===4)setTimeout(cp,80);});b.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!b.value&&i>0)bs[i-1].focus();if(e.key==='Enter')cp();if(e.key==='Escape')cm();});});
+function ap(idx){sgb.classList.remove('show');pi=idx;fc=0;lk=false;mn.textContent=cp2[idx].name;bs.forEach(b=>{b.value='';b.className='pb';b.disabled=false;});pe.textContent='';ov.classList.add('show');setTimeout(()=>bs[0].focus(),120);}
+async function h256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function cp(){if(lk)return;const pin=bs.map(b=>b.value).join('');if(pin.length<4){pe.textContent='กรุณากรอกให้ครบ 4 หลัก';return;}const p=cp2[pi];const h=await h256(p.name+'|'+pin);if(h===p.h){cm();ss(p);}else{fc++;bs.forEach(b=>{b.value='';b.className='pb err';});if(fc>=5){lk=true;pe.textContent='กรอกผิดเกิน 5 ครั้ง';bs.forEach(b=>b.disabled=true);setTimeout(cm,2000);}else{pe.textContent='เลขประชาชนไม่ถูกต้อง ('+fc+'/5)';setTimeout(()=>{bs.forEach(b=>b.className='pb');bs[0].focus();},600);}}}
+function cm(){ov.classList.remove('show');pi=null;}
+function ss(p){
+tip.style.display='none';
+const ir=Object.entries(p.income).map(([k,v])=>'<div class=\\'ri\\'><span>'+k+'</span><span class=\\'rv g\\'>'+fmt(v)+'</span></div>').join('');
+const dr=Object.entries(p.deduct).map(([k,v])=>'<div class=\\'ri\\'><span>'+k+'</span><span class=\\'rv r\\'>- '+fmt(v)+'</span></div>').join('')||'<div class=\\'ri\\' style=\\'color:#aaa;font-size:13px\\'>— ไม่มีรายการ —</div>';
+res.innerHTML='<div class=\\'sl\\'><div class=\\'sh\\'><div class=\\'sm\\'>📅 '+ms.value+'</div><div class=\\'sname\\'>'+p.name+'</div><div class=\\'smeta\\'><span class=\\'smi\\'>ระดับ <strong>'+( p.level||'-')+'</strong></span><span class=\\'smi\\'>ชั้น <strong>'+(p.grade||'-')+'</strong></span><span class=\\'smi\\'>เงินเดือน <strong>'+fmt(p.salary)+'</strong> บาท</span></div></div><div class=\\'sb\\'><div class=\\'sc\\'><div class=\\'sl2\\'>รวมรายรับ</div><div class=\\'sv2 g\\'>'+fmt(p.total_income)+'</div></div><div class=\\'sc\\'><div class=\\'sl2\\'>รวมหัก+หนี้สิน</div><div class=\\'sv2 r\\'>'+fmt(p.total_deduct)+'</div></div><div class=\\'sc\\'><div class=\\'sl2\\'>💰 รับสุทธิ</div><div class=\\'sv2 n\\'>'+fmt(p.net)+'</div></div></div><div class=\\'sec\\'><div class=\\'stit\\'><span>💚 รายการรับ</span><span class=\\'stot\\'>'+fmt(p.total_income)+'</span></div>'+ir+'</div><div class=\\'sec\\'><div class=\\'stit\\'><span>🔴 รายการหัก + หนี้สิน</span><span class=\\'stot\\'>'+fmt(p.total_deduct)+'</span></div>'+dr+'</div></div>';}
+<\/script></body></html>`;
+}
+</script>
+</body>
+</html>
