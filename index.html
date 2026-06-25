@@ -1,287 +1,32 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ระบบงานการเงิน พัน.ช.คมศ.พล.ช.</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600&display=swap');
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Sarabun', 'TH Sarabun PSK', sans-serif;
-    background: #f5f4f0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
-  }
-
-  .portal {
-    width: 100%;
-    max-width: 680px;
-  }
-
-  /* Header */
-  .header {
-    text-align: center;
-    margin-bottom: 2.5rem;
-  }
-  .emblem {
-    width: 72px;
-    height: 72px;
-    background: #1a3a5c;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1rem;
-    font-size: 32px;
-  }
-  .unit-badge {
-    display: inline-block;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 999px;
-    font-size: 13px;
-    color: #666;
-    padding: 4px 16px;
-    margin-bottom: 10px;
-    letter-spacing: 0.02em;
-  }
-  .main-title {
-    font-size: 26px;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 4px;
-  }
-  .sub-title {
-    font-size: 15px;
-    color: #888;
-  }
-
-  /* App grid */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 14px;
-    margin-bottom: 2rem;
-  }
-
-  .card {
-    background: #fff;
-    border: 1px solid #e8e6e0;
-    border-radius: 14px;
-    padding: 1.5rem 1.25rem;
-    text-decoration: none;
-    display: block;
-    transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
-    cursor: pointer;
-  }
-  .card:hover {
-    border-color: #bbb;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
-    transform: translateY(-2px);
-  }
-  .card:active { transform: translateY(0); }
-
-  .icon-wrap {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    margin-bottom: 14px;
-  }
-  .icon-blue  { background: #e6f1fb; }
-  .icon-teal  { background: #e1f5ee; }
-  .icon-amber { background: #faeeda; }
-
-  .card-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 6px;
-  }
-  .card-desc {
-    font-size: 13px;
-    color: #888;
-    line-height: 1.6;
-    margin-bottom: 14px;
-  }
-  .card-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #185fa5;
-    background: #e6f1fb;
-    border-radius: 8px;
-    padding: 5px 12px;
-  }
-  .icon-teal  .card + .card-cta,
-  .card.teal  .card-cta { background: #e1f5ee; color: #0f6e56; }
-  .card.amber .card-cta { background: #faeeda; color: #854f0b; }
-
-  /* Divider */
-  hr { border: none; border-top: 1px solid #e8e6e0; margin: 1.5rem 0; }
-
-  /* Host section */
-  .section-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #999;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-  .host-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 10px;
-    margin-bottom: 2rem;
-  }
-  .host-card {
-    background: #fff;
-    border: 1px solid #e8e6e0;
-    border-radius: 10px;
-    padding: 12px 14px;
-  }
-  .host-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 3px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .star-badge {
-    font-size: 10px;
-    background: #faeeda;
-    color: #854f0b;
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-weight: 500;
-  }
-  .host-tag { font-size: 12px; color: #999; }
-  .host-link {
-    display: inline-block;
-    margin-top: 6px;
-    font-size: 12px;
-    color: #185fa5;
-    text-decoration: none;
-  }
-  .host-link:hover { text-decoration: underline; }
-
-  /* Footer */
-  .footer {
-    text-align: center;
-    font-size: 12px;
-    color: #bbb;
-    padding-top: 1rem;
-    border-top: 1px solid #e8e6e0;
-  }
-
-  /* Dark mode */
-  @media (prefers-color-scheme: dark) {
-    body { background: #1a1a1a; }
-    .card, .host-card { background: #242424; border-color: #333; }
-    .card:hover { border-color: #555; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
-    .main-title, .card-title, .host-name { color: #f0f0f0; }
-    .sub-title, .card-desc, .host-tag, .unit-badge { color: #777; }
-    .unit-badge { background: #242424; border-color: #333; }
-    hr, .footer { border-color: #333; }
-    .emblem { background: #0f2740; }
-    .icon-blue  { background: #0c2a42; }
-    .icon-teal  { background: #053420; }
-    .icon-amber { background: #3a2205; }
-    .card-cta   { background: #0c2a42; color: #5aabf5; }
-    .card.teal  .card-cta { background: #053420; color: #3ec99a; }
-    .card.amber .card-cta { background: #3a2205; color: #f0a93a; }
-    .footer { color: #555; }
-  }
-</style>
-</head>
-<body>
-
-<div class="portal">
-
-  <div class="header">
-    <div class="emblem">⚙️</div>
-    <div class="unit-badge">พัน.ช.คมศ.พล.ช.</div>
-    <div class="main-title">ระบบงานการเงิน</div>
-    <div class="sub-title">กองพันทหารช่างเครื่องมือพิเศษ กองพลทหารช่าง</div>
-  </div>
-
-  <div class="grid">
-
-
-    <a class="card" href="payroll_viewer.html">
-      <div class="icon-wrap icon-blue">🪖</div>
-      <div class="card-title">ดูสลิปเงินเดือน</div>
-      <div class="card-desc">กำลังพลค้นหาและดูสลิปเงินเดือนของตัวเองด้วย PIN</div>
-      <span class="card-cta">เปิดระบบ →</span>
-    </a>
-
-    <a class="card" href="payslip.html">
-      <div class="icon-wrap icon-blue">💰</div>
-      <div class="card-title">ระบบเงินเดือน</div>
-      <div class="card-desc">จัดการเงินเดือน เบี้ยเลี้ยง และพิมพ์ใบรับรองเงินเดือนกำลังพล</div>
-      <span class="card-cta">เปิดระบบ →</span>
-    </a>
-
-    <a class="card teal" href="bank.html">
-      <div class="icon-wrap icon-teal">🏦</div>
-      <div class="card-title">ค้นหาบัญชีธนาคาร</div>
-      <div class="card-desc">ค้นหาและจัดการข้อมูลบัญชีธนาคารของกำลังพลทุกนาย</div>
-      <span class="card-cta" style="background:#e1f5ee;color:#0f6e56;">เปิดระบบ →</span>
-    </a>
-
-    <a class="card amber" href="debt.html">
-      <div class="icon-wrap icon-amber">📊</div>
-      <div class="card-title">วิเคราะห์หนี้สหกรณ์</div>
-      <div class="card-desc">วิเคราะห์และจัดทำแบบฟอร์มภาระหนี้สินสหกรณ์ออมทรัพย์</div>
-      <span class="card-cta" style="background:#faeeda;color:#854f0b;">เปิดระบบ →</span>
-    </a>
-
-  </div>
-
-  <hr>
-
-  <div class="section-label">แนะนำบริการ Host ฟรี</div>
-  <div class="host-grid">
-    <div class="host-card">
-      <div class="host-name">Netlify <span class="star-badge">⭐ แนะนำ</span></div>
-      <div class="host-tag">ลากวางไฟล์ได้เลย ไม่ต้องสมัคร Git</div>
-      <a class="host-link" href="https://netlify.com" target="_blank">→ netlify.com</a>
-    </div>
-    <div class="host-card">
-      <div class="host-name">GitHub Pages</div>
-      <div class="host-tag">เสถียร ฟรี custom domain ได้</div>
-      <a class="host-link" href="https://pages.github.com" target="_blank">→ pages.github.com</a>
-    </div>
-    <div class="host-card">
-      <div class="host-name">Vercel</div>
-      <div class="host-tag">เร็วมาก UI สวย deploy ง่าย</div>
-      <a class="host-link" href="https://vercel.com" target="_blank">→ vercel.com</a>
-    </div>
-    <div class="host-card">
-      <div class="host-name">Cloudflare Pages</div>
-      <div class="host-tag">เสถียรมาก ระดับองค์กร</div>
-      <a class="host-link" href="https://pages.cloudflare.com" target="_blank">→ pages.cloudflare.com</a>
-    </div>
-  </div>
-
-  <div class="footer">ระบบงานการเงิน พัน.ช.คมศ.พล.ช. &nbsp;|&nbsp; พัฒนาด้วย Claude AI &nbsp;|&nbsp; ปรับปรุง 2568</div>
-
-</div>
-
-</body>
-</html>
+<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>สรุปเงินเดือน</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Sarabun','Noto Sans Thai',sans-serif;background:#eef0f3;min-height:100vh}.tb{background:#0d2240;color:#fff;padding:14px 16px;text-align:center}.tb h1{font-size:17px;font-weight:700}.tb p{font-size:12px;opacity:.6;margin-top:2px}.sw{background:#fff;padding:10px 14px;border-bottom:2px solid #ddd;position:sticky;top:0;z-index:200}.mr{display:flex;justify-content:center;margin-bottom:8px}.mr select{border:1.5px solid #bbb;border-radius:8px;padding:6px 14px;font-size:14px;font-family:inherit;outline:none;background:#f8f8f8;color:#0d2240;font-weight:600;cursor:pointer;min-width:200px}.sr{display:flex;gap:8px;max-width:700px;margin:0 auto}.sr input{flex:1;border:1.5px solid #bbb;border-radius:8px;padding:9px 14px;font-size:14px;font-family:inherit;outline:none}.sr input:focus{border-color:#0d2240}.sr button{background:#0d2240;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:14px;font-family:inherit;font-weight:600;cursor:pointer}.sgw{max-width:700px;margin:0 auto;position:relative}.sgb{position:absolute;top:4px;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.12);max-height:300px;overflow-y:auto;display:none;z-index:300}.sgb.show{display:block}.si{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:13px}.si:hover{background:#f0f6ff}.si:last-child{border-bottom:none}.sk{background:#0d2240;color:#fff;font-size:10px;padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0}.sn{font-weight:600;flex:1}.sv{color:#555;font-size:12px;white-space:nowrap}.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center}.ov.show{display:flex}.mo{background:#fff;border-radius:16px;padding:28px 24px 24px;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.2);text-align:center}.mi{font-size:36px;margin-bottom:8px}.mt{font-size:16px;font-weight:700;color:#0d2240;margin-bottom:3px}.mn{font-size:13px;color:#444;margin-bottom:6px;font-weight:600;line-height:1.5}.mh{font-size:12px;color:#888;margin-bottom:16px}.pr{display:flex;gap:10px;justify-content:center;margin-bottom:8px}.pb{width:54px;height:58px;border:2px solid #bbb;border-radius:10px;font-size:24px;font-weight:700;text-align:center;font-family:inherit;outline:none;color:#0d2240}.pb:focus{border-color:#0d2240}.pb.err{border-color:#e74c3c;background:#fff5f5}.me{font-size:12px;color:#e74c3c;min-height:18px;margin-bottom:12px}.mb{display:flex;gap:8px}.bok{flex:1;background:#0d2240;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-family:inherit;font-weight:700;cursor:pointer}.bno{flex:1;background:#eee;color:#444;border:none;border-radius:8px;padding:11px;font-size:14px;font-family:inherit;cursor:pointer}.pw{max-width:680px;margin:20px auto 50px;padding:0 14px}.tip{text-align:center;padding:60px 20px;color:#888;font-size:14px}.ti{font-size:44px;margin-bottom:10px}.sl{border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1)}.sh{background:linear-gradient(135deg,#0d2240,#1e5fa8);color:#fff;padding:20px 20px 18px}.sm{font-size:11px;color:rgba(255,255,255,.55);letter-spacing:1px;margin-bottom:5px}.sname{font-size:20px;font-weight:700;margin-bottom:6px}.smeta{display:flex;gap:14px;flex-wrap:wrap}.smi{font-size:12px;color:rgba(255,255,255,.6)}.smi strong{color:rgba(255,255,255,.95)}.sb{background:#fff;display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:2px solid #eee}.sc{padding:14px 10px;text-align:center;border-right:1px solid #eee}.sc:last-child{border-right:none;background:#f0f7ff}.sl2{font-size:11px;color:#888;margin-bottom:4px}.sv2{font-size:16px;font-weight:700}.sv2.g{color:#1a7a4a}.sv2.r{color:#c0392b}.sv2.n{color:#0d2240;font-size:19px}.sec{background:#fff;margin-top:2px}.stit{padding:11px 16px 7px;font-size:11px;font-weight:700;color:#999;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center}.stot{font-size:13px;font-weight:700;color:#333;letter-spacing:0}.ri{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid #f5f5f5;font-size:14px}.ri:last-child{border-bottom:none}.rv{font-weight:600}.rv.g{color:#1a7a4a}.rv.r{color:#c0392b}</style></head><body><div id="__back_btn" style="position:fixed;top:12px;left:12px;z-index:99999;"><a href="/panchor-finance/" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:999px;padding:5px 12px;font-family:Sarabun,sans-serif;font-size:13px;text-decoration:none;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">← เมนูหลัก</a></div>
+<div class="tb"><h1>🪖 สรุปเงินเดือน กำลังพล</h1><p>กองพันทหารช่างเครื่องมือพิเศษ กองพลทหารช่าง</p></div>
+<div class="sw"><div class="mr"><select id="ms" onchange="omc()"><option value="เงินเดือน มิ.ย. 69">เงินเดือน มิ.ย. 69</option></select></div><div class="sr"><input type="text" id="inp" placeholder="พิมพ์ชื่อหรือนามสกุล..." autocomplete="off"/><button onclick="ds()">ค้นหา</button></div><div class="sgw"><div class="sgb" id="sgb"></div></div></div>
+<div class="pw"><div class="tip" id="tip"><div class="ti">🔍</div>เลือกเดือน → ค้นหาชื่อ → กรอก 4 ตัวท้ายเลขประชาชน</div><div id="res"></div></div>
+<div class="ov" id="ov" onclick="if(event.target===this)cm()"><div class="mo"><div class="mi">🔐</div><div class="mt">ยืนยันตัวตน</div><div class="mn" id="mn"></div><div class="mh">กรอก <strong>4 ตัวท้าย</strong> เลขประจำตัวประชาชน</div><div class="pr"><input class="pb" id="p0" maxlength="1" inputmode="numeric"/><input class="pb" id="p1" maxlength="1" inputmode="numeric"/><input class="pb" id="p2" maxlength="1" inputmode="numeric"/><input class="pb" id="p3" maxlength="1" inputmode="numeric"/></div><div class="me" id="pe"></div><div class="mb"><button class="bno" onclick="cm()">ยกเลิก</button><button class="bok" onclick="cp()">ยืนยัน</button></div></div></div>
+<script>
+const M={"เงินเดือน มิ.ย. 69":[]};
+const inp=document.getElementById('inp'),sgb=document.getElementById('sgb'),res=document.getElementById('res'),tip=document.getElementById('tip'),ov=document.getElementById('ov'),pe=document.getElementById('pe'),mn=document.getElementById('mn'),ms=document.getElementById('ms');
+const bs=[0,1,2,3].map(i=>document.getElementById('p'+i));
+let cp2=[],pi=null,fc=0,lk=false;
+function omc(){const k=ms.value;cp2=M[k]||[];inp.value='';sgb.classList.remove('show');res.innerHTML='';tip.style.display='block';}
+omc();
+const nm=s=>s.replace(/\s+/g,'').toLowerCase();
+const fmt=v=>v!=null?Number(v).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}):'0.00';
+function sr2(q){if(!q)return[];const nq=nm(q);return cp2.map((p,i)=>({...p,i})).filter(p=>nm(p.name).includes(nq)).slice(0,8);}
+function rs(l){if(!l.length){sgb.classList.remove('show');return;}sgb.innerHTML=l.map(p=>{const d=document.createElement('div');d.className='si';d.dataset.idx=p.i;const pts=p.name.split(' ');d.innerHTML='<span class=\'sk\'>'+pts[0]+'</span><span class=\'sn\'>'+pts.slice(1).join(' ')+'</span><span class=\'sv\'>'+fmt(p.net)+'</span>';return d.outerHTML;}).join('');sgb.querySelectorAll('.si').forEach(el=>el.addEventListener('click',()=>ap(parseInt(el.dataset.idx))));sgb.classList.add('show');}
+function ds(){const l=sr2(inp.value.trim());sgb.classList.remove('show');if(!l.length){tip.style.display='block';tip.innerHTML='<div class=\'ti\'>❌</div>ไม่พบชื่อ';res.innerHTML='';return;}if(l.length===1)ap(l[0].i);else rs(l);}
+inp.addEventListener('input',()=>{const q=inp.value.trim();if(!q){sgb.classList.remove('show');return;}rs(sr2(q));});
+inp.addEventListener('keydown',e=>{if(e.key==='Enter')ds();if(e.key==='Escape')sgb.classList.remove('show');});
+document.addEventListener('click',e=>{if(!e.target.closest('.sw'))sgb.classList.remove('show');});
+bs.forEach((b,i)=>{b.addEventListener('input',()=>{b.value=b.value.replace(/[^0-9]/g,'').slice(-1);if(b.value&&i<3)bs[i+1].focus();if(bs.map(x=>x.value).join('').length===4)setTimeout(cp,80);});b.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!b.value&&i>0)bs[i-1].focus();if(e.key==='Enter')cp();if(e.key==='Escape')cm();});});
+function ap(idx){sgb.classList.remove('show');pi=idx;fc=0;lk=false;mn.textContent=cp2[idx].name;bs.forEach(b=>{b.value='';b.className='pb';b.disabled=false;});pe.textContent='';ov.classList.add('show');setTimeout(()=>bs[0].focus(),120);}
+async function h256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function cp(){if(lk)return;const pin=bs.map(b=>b.value).join('');if(pin.length<4){pe.textContent='กรุณากรอกให้ครบ 4 หลัก';return;}const p=cp2[pi];const h=await h256(p.name+'|'+pin);if(h===p.h){cm();ss(p);}else{fc++;bs.forEach(b=>{b.value='';b.className='pb err';});if(fc>=5){lk=true;pe.textContent='กรอกผิดเกิน 5 ครั้ง';bs.forEach(b=>b.disabled=true);setTimeout(cm,2000);}else{pe.textContent='เลขประชาชนไม่ถูกต้อง ('+fc+'/5)';setTimeout(()=>{bs.forEach(b=>b.className='pb');bs[0].focus();},600);}}}
+function cm(){ov.classList.remove('show');pi=null;}
+function ss(p){
+tip.style.display='none';
+const ir=Object.entries(p.income).map(([k,v])=>'<div class=\'ri\'><span>'+k+'</span><span class=\'rv g\'>'+fmt(v)+'</span></div>').join('');
+const dr=Object.entries(p.deduct).map(([k,v])=>'<div class=\'ri\'><span>'+k+'</span><span class=\'rv r\'>- '+fmt(v)+'</span></div>').join('')||'<div class=\'ri\' style=\'color:#aaa;font-size:13px\'>— ไม่มีรายการ —</div>';
+res.innerHTML='<div class=\'sl\'><div class=\'sh\'><div class=\'sm\'>📅 '+ms.value+'</div><div class=\'sname\'>'+p.name+'</div><div class=\'smeta\'><span class=\'smi\'>ระดับ <strong>'+( p.level||'-')+'</strong></span><span class=\'smi\'>ชั้น <strong>'+(p.grade||'-')+'</strong></span><span class=\'smi\'>เงินเดือน <strong>'+fmt(p.salary)+'</strong> บาท</span></div></div><div class=\'sb\'><div class=\'sc\'><div class=\'sl2\'>รวมรายรับ</div><div class=\'sv2 g\'>'+fmt(p.total_income)+'</div></div><div class=\'sc\'><div class=\'sl2\'>รวมหัก+หนี้สิน</div><div class=\'sv2 r\'>'+fmt(p.total_deduct)+'</div></div><div class=\'sc\'><div class=\'sl2\'>💰 รับสุทธิ</div><div class=\'sv2 n\'>'+fmt(p.net)+'</div></div></div><div class=\'sec\'><div class=\'stit\'><span>💚 รายการรับ</span><span class=\'stot\'>'+fmt(p.total_income)+'</span></div>'+ir+'</div><div class=\'sec\'><div class=\'stit\'><span>🔴 รายการหัก + หนี้สิน</span><span class=\'stot\'>'+fmt(p.total_deduct)+'</span></div>'+dr+'</div></div>';}
+</script></body></html>
