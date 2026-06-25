@@ -351,11 +351,11 @@ const GH_KEY = 'gh_config';
 const GH_DEFAULT = { user:'mizzterdonuttz-code', repo:'panchor-finance', file:'payslip_data.json' };
 
 function getGhConfig(){
-  try{ const s=localStorage.getItem(GH_KEY); if(s){ const p=JSON.parse(s); return {...GH_DEFAULT,...p}; } }catch(e){}
-  return GH_DEFAULT;
+  const token = localStorage.getItem('gh_token') || '';
+  return {...GH_DEFAULT, token};
 }
 function saveGhConfig(cfg){
-  localStorage.setItem(GH_KEY, JSON.stringify(cfg));
+  if(cfg.token) localStorage.setItem('gh_token', cfg.token);
 }
 function checkTokenOrPrompt(callback){
   const cfg = getGhConfig();
