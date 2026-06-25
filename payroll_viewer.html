@@ -78,7 +78,7 @@ body{font-family:'Sarabun','Noto Sans Thai',sans-serif;background:#eef0f3;min-he
 .row-val.g{color:#1a7a4a}
 .row-val.r{color:#c0392b}
 /* ADMIN */
-.admin-panel{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;display:none;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
+.admin-panel{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;display:none;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}#editMonthPanel{z-index:700}#editPersonPanel{z-index:800}
 .admin-panel.show{display:flex}
 .admin-box{background:#fff;border-radius:14px;padding:20px;max-width:500px;width:100%;margin:auto}
 .admin-box h2{font-size:15px;font-weight:700;color:#0d2240;margin-bottom:14px}
@@ -119,6 +119,13 @@ body{font-family:'Sarabun','Noto Sans Thai',sans-serif;background:#eef0f3;min-he
 .admin-footer{display:flex;justify-content:flex-end;margin-top:4px}
 .btn-close-admin{background:#eee;color:#333;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-family:inherit;cursor:pointer}
 .btn-close-admin:hover{background:#ddd}
+
+@media print {
+  body > *:not(.pw) { display: none !important; }
+  .pw { margin: 0 !important; padding: 0 !important; }
+  #tip, #__back_btn, .sw, #printBtn { display: none !important; }
+  .slip { box-shadow: none !important; border: 1px solid #ddd; }
+}
 </style>
 </head>
 <body><div id="__back_btn" style="position:fixed;top:12px;left:12px;z-index:99999;"><a href="/panchor-finance/" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:999px;padding:5px 12px;font-family:Sarabun,sans-serif;font-size:13px;text-decoration:none;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">← เมนูหลัก</a></div>
@@ -387,6 +394,12 @@ function showSlip(p){
       <div class="sec-title"><span>🔴 รายการหัก + หนี้สิน</span><span class="sec-total">${fmt(p.total_deduct)}</span></div>
       ${dedRows}
     </div>
+  </div>
+  <div style="text-align:center;margin-top:16px;padding-bottom:8px;">
+    <button id="printBtn" onclick="window.print()"
+      style="background:#0d2240;color:#fff;border:none;border-radius:10px;padding:12px 36px;font-size:16px;font-family:inherit;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+      🖨️ พิมพ์สลิป
+    </button>
   </div>`;
 }
 
@@ -627,15 +640,16 @@ function renderEditList(persons, q){
   const filtered = q ? persons.filter(p=>norm(p.name).includes(norm(q))) : persons;
   const el = document.getElementById('editPersonList');
   if(!filtered.length){ el.innerHTML='<div style="color:#aaa;padding:12px;text-align:center;font-size:13px;">ไม่พบรายชื่อ</div>'; return; }
-  el.innerHTML = filtered.map((p,i)=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #f0f0f0;">
+  el.innerHTML = filtered.map((p)=>{
+    const realIdx = MONTHS[_editMonth].indexOf(p);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #f0f0f0;">
       <div>
         <div style="font-size:14px;font-weight:600;color:#0d2240;">${p.name}</div>
         <div style="font-size:12px;color:#888;">สุทธิ: ${p.net.toLocaleString('th-TH')} บาท</div>
       </div>
-      <button onclick="openEditPerson(${JSON.stringify(_editMonth)},${persons.indexOf(p)})"
+      <button onclick="openEditPerson(${JSON.stringify(_editMonth)},${realIdx})"
         style="background:#1a3a6b;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ แก้ไข</button>
-    </div>`).join('');
+    </div>`;}).join('');
 }
 
 let _editPersonIdx = null;
