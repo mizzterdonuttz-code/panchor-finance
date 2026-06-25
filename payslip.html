@@ -1627,7 +1627,7 @@ function loadBiaData(){
   const rate=rateEl?parseFloat(rateEl.value)||96:96;
   const deductRate=deductRateEl?parseFloat(deductRateEl.value)||70:70;
   tbody.innerHTML='';
-  let totEarn=0, totFood=0, totExtra=0, totTransfer=0;
+  let totEarn=0, totFood=0, totExtra=0, totTransfer=0, countDeduct=0;
   currentBiaSoldiers.forEach((s,i)=>{
     const d=getBiaSoldierData(s.id,finalYm,p);
     const earn=rate*d.days;
@@ -1635,6 +1635,7 @@ function loadBiaData(){
     const extra=d.extra||0;
     const transfer=earn-foodDeduct-extra;
     totEarn+=earn; totFood+=foodDeduct; totExtra+=extra; totTransfer+=transfer;
+    if(d.deductDays>0) countDeduct++;
     const tr=document.createElement('tr');
     tr.style.borderBottom='1px solid #eee';
     tr.innerHTML=`
@@ -1665,7 +1666,7 @@ function loadBiaData(){
     <td colspan="3" style="padding:8px 10px;">รวมทั้งหมด (${currentBiaSoldiers.length} คน)</td>
     <td style="padding:8px 10px;text-align:center;">-</td>
     <td style="padding:8px 10px;text-align:right;">${fmt(totEarn)}</td>
-    <td style="padding:8px 10px;text-align:center;">-</td>
+    <td style="padding:8px 10px;text-align:center;font-size:12px;color:#8b2000;">${countDeduct} คน</td>
     <td style="padding:8px 10px;text-align:right;color:#8b2000;">${fmt(totFood)}</td>
     <td style="padding:8px 10px;text-align:right;">${fmt(totExtra)}</td>
     <td style="padding:8px 10px;text-align:right;color:#1a4f8a;">${fmt(totTransfer)}</td>`;
@@ -1676,12 +1677,13 @@ function loadBiaData(){
   currentBiaSoldiers.forEach(s=>{
     const d=getBiaSoldierData(s.id,finalYm,p);
     const earn2=rate*d.days, food2=deductRate*d.deductDays, extra2=d.extra||0;
-    if(!byUnitSummary[s.unit]) byUnitSummary[s.unit]={earn:0,food:0,extra:0,transfer:0,count:0};
+    if(!byUnitSummary[s.unit]) byUnitSummary[s.unit]={earn:0,food:0,extra:0,transfer:0,count:0,countDeduct:0};
     byUnitSummary[s.unit].earn+=earn2;
     byUnitSummary[s.unit].food+=food2;
     byUnitSummary[s.unit].extra+=extra2;
     byUnitSummary[s.unit].transfer+=(earn2-food2-extra2);
     byUnitSummary[s.unit].count++;
+    if(d.deductDays>0) byUnitSummary[s.unit].countDeduct++;
   });
   const unitRows=UNIT_ORDER.filter(u=>byUnitSummary[u]).map(u=>{
     const d2=byUnitSummary[u];
@@ -1689,6 +1691,7 @@ function loadBiaData(){
       <td style="padding:5px 10px;font-weight:600;">${u}</td>
       <td style="padding:5px 10px;text-align:center;">${d2.count}</td>
       <td style="padding:5px 10px;text-align:right;">${fmt(d2.earn)}</td>
+      <td style="padding:5px 10px;text-align:center;color:#8b2000;">${d2.countDeduct}</td>
       <td style="padding:5px 10px;text-align:right;color:#8b2000;">${fmt(d2.food)}</td>
       <td style="padding:5px 10px;text-align:right;color:#8b2000;">${fmt(d2.extra)}</td>
       <td style="padding:5px 10px;text-align:right;font-weight:700;color:#1a4f8a;">${fmt(d2.transfer)}</td>
@@ -1702,6 +1705,7 @@ function loadBiaData(){
           <th style="padding:6px 10px;text-align:left;">กองร้อย</th>
           <th style="padding:6px 10px;text-align:center;">จำนวน</th>
           <th style="padding:6px 10px;text-align:right;">ยอดเบิก</th>
+          <th style="padding:6px 10px;text-align:center;">คนหักประกอบ</th>
           <th style="padding:6px 10px;text-align:right;">หักค่าประกอบ</th>
           <th style="padding:6px 10px;text-align:right;">หักอื่นๆ</th>
           <th style="padding:6px 10px;text-align:right;">โอนทหาร</th>
@@ -1711,6 +1715,7 @@ function loadBiaData(){
             <td style="padding:6px 10px;">รวม</td>
             <td style="padding:6px 10px;text-align:center;">${currentBiaSoldiers.length}</td>
             <td style="padding:6px 10px;text-align:right;">${fmt(totEarn)}</td>
+            <td style="padding:6px 10px;text-align:center;color:#8b2000;">${countDeduct}</td>
             <td style="padding:6px 10px;text-align:right;color:#8b2000;">${fmt(totFood)}</td>
             <td style="padding:6px 10px;text-align:right;color:#8b2000;">${fmt(totExtra)}</td>
             <td style="padding:6px 10px;text-align:right;color:#1a4f8a;">${fmt(totTransfer)}</td>
@@ -1725,37 +1730,30 @@ function updateBia(sid, field, val, ym, p){
   if(!biaData[ym][p]) biaData[ym][p]={};
   if(!biaData[ym][p][sid]) biaData[ym][p][sid]={days:10,deductDays:10,extra:0};
   biaData[ym][p][sid][field]=parseFloat(val)||0;
-  // recalc summary only (ไม่ re-render ทั้งตาราง เพื่อไม่เสีย focus)
-  const rate=parseFloat((document.getElementById('biaRate')||{value:96}).value)||96;
-  const deductRate=parseFloat((document.getElementById('biaDeductRate')||{value:70}).value)||70;
-  const {ym:cym,p:cp}=getBiaKey();
-  let totEarn=0,totFood=0,totExtra=0,totTransfer=0;
-  currentBiaSoldiers.forEach(s=>{
-    const d=getBiaSoldierData(s.id,cym,cp);
-    totEarn+=rate*d.days; totFood+=deductRate*d.deductDays; totExtra+=d.extra||0;
-    totTransfer+=(rate*d.days)-(deductRate*d.deductDays)-(d.extra||0);
-  });
-  const periodLabel=['','งวด 1 (1-10)','งวด 2 (11-20)','งวด 3 (21-31)'][cp];
-  document.getElementById('biaSummary').innerHTML=`
-    <div><small style="color:#666;display:block;font-size:11px;">งวด</small><strong>${periodLabel}</strong></div>
-    <div><small style="color:#666;display:block;font-size:11px;">ยอดเบิกรวม</small><strong>${fmt(totEarn)}</strong></div>
-    <div><small style="color:#666;display:block;font-size:11px;">หักค่าประกอบรวม</small><strong style="color:#8b2000;">${fmt(totFood)}</strong></div>
-    <div><small style="color:#666;display:block;font-size:11px;">หักอื่นๆรวม</small><strong style="color:#8b2000;">${fmt(totExtra)}</strong></div>
-    <div><small style="color:#666;display:block;font-size:11px;">โอนทหารรวม</small><strong style="color:#1a4f8a;">${fmt(totTransfer)}</strong></div>
-    <div><small style="color:#666;display:block;font-size:11px;">โอนค่าประกอบรวม</small><strong style="color:#3B6D11;">${fmt(totFood)}</strong></div>`;
-  // อัพเดท row นั้น
-  const rows=document.getElementById('biaBody').querySelectorAll('tr');
-  const idx=currentBiaSoldiers.findIndex(s=>s.id===sid);
-  if(idx>=0&&rows[idx]){
-    const d=biaData[ym][p][sid];
-    const earn=rate*d.days, food=deductRate*d.deductDays, extra2=d.extra||0;
-    const cells=rows[idx].querySelectorAll('td');
-    if(cells[4]) cells[4].textContent=fmt(earn);
-    if(cells[6]) cells[6].textContent=fmt(food);
-    if(cells[8]) cells[8].textContent=fmt(earn-food-extra2);
+  // จำตำแหน่ง focus ไว้ก่อน re-render
+  const active=document.activeElement;
+  let focusInfo=null;
+  if(active && active.tagName==='INPUT'){
+    const rows=Array.from(document.getElementById('biaBody').querySelectorAll('tr'));
+    const tr=active.closest('tr');
+    const rowIdx=rows.indexOf(tr);
+    const cellInputs=Array.from(tr.querySelectorAll('input'));
+    const colIdx=cellInputs.indexOf(active);
+    focusInfo={rowIdx,colIdx,selStart:active.selectionStart,selEnd:active.selectionEnd};
   }
-  // auto-save หลังแก้เบี้ยเลี้ยง
+  // re-render ทั้งตาราง summary row จะอัปเดตเรียลไทม์
+  loadBiaData();
   saveToStorage();
+  // คืน focus
+  if(focusInfo && focusInfo.rowIdx>=0){
+    const rows=document.getElementById('biaBody').querySelectorAll('tr');
+    const tr=rows[focusInfo.rowIdx];
+    if(tr){
+      const inputs=tr.querySelectorAll('input');
+      const inp=inputs[focusInfo.colIdx];
+      if(inp){ inp.focus(); try{ inp.setSelectionRange(focusInfo.selStart,focusInfo.selEnd); }catch(e){} }
+    }
+  }
 }
 
 function exportBiaExcel(type){
