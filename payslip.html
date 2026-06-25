@@ -348,13 +348,46 @@ function importData(input){
 
 /* ===== GITHUB SYNC ===== */
 const GH_KEY = 'gh_config';
-const GH_FIXED = { token:'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', user:'mizzterdonuttz-code', repo:'panchor-finance', file:'payslip_data.json' };
+const GH_DEFAULT = { user:'mizzterdonuttz-code', repo:'panchor-finance', file:'payslip_data.json' };
 
 function getGhConfig(){
-  return GH_FIXED;
+  try{ const s=localStorage.getItem(GH_KEY); if(s){ const p=JSON.parse(s); return {...GH_DEFAULT,...p}; } }catch(e){}
+  return GH_DEFAULT;
 }
 function saveGhConfig(cfg){
-  // config ฝังในโค้ดแล้ว ไม่ต้อง save
+  localStorage.setItem(GH_KEY, JSON.stringify(cfg));
+}
+function checkTokenOrPrompt(callback){
+  const cfg = getGhConfig();
+  if(cfg.token){ if(callback) callback(); return; }
+  showTokenPrompt(callback);
+}
+function showTokenPrompt(callback){
+  const overlay = document.createElement('div');
+  overlay.id = '__token_prompt';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:14px;padding:2rem;width:90%;max-width:420px;font-family:Sarabun,sans-serif;">
+      <div style="font-size:20px;font-weight:700;color:#1a3a6b;margin-bottom:8px;">🔑 ตั้งค่าครั้งแรก</div>
+      <div style="font-size:14px;color:#666;margin-bottom:16px;line-height:1.6;">กรอก GitHub Personal Access Token เพื่อเปิดใช้งานการซิงค์ข้อมูล<br>กรอกครั้งเดียวต่อเครื่อง browser จะจำให้อัตโนมัติ</div>
+      <input id="__token_input" type="password" placeholder="ghp_xxxxxxxxxxxx"
+        style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box;margin-bottom:12px;">
+      <div style="font-size:12px;color:#999;margin-bottom:16px;">สร้าง Token ได้ที่ github.com → Settings → Developer settings → Personal access tokens → Classic (เลือก scope: repo)</div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('__token_prompt').remove()" style="flex:1;padding:10px;border:1.5px solid #ddd;border-radius:8px;background:#fff;font-family:inherit;font-size:14px;cursor:pointer;">ยกเลิก</button>
+        <button onclick="saveTokenFromPrompt()" style="flex:2;padding:10px;border:none;border-radius:8px;background:#1a3a6b;color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">บันทึกและเชื่อมต่อ</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('__token_input').focus();
+  window.__tokenCallback = callback;
+}
+function saveTokenFromPrompt(){
+  const token = document.getElementById('__token_input').value.trim();
+  if(!token){ alert('กรุณากรอก Token'); return; }
+  saveGhConfig({...getGhConfig(), token});
+  document.getElementById('__token_prompt').remove();
+  if(window.__tokenCallback) window.__tokenCallback();
 }
 
 function showGithubSettings(){
@@ -1094,16 +1127,18 @@ function selectAll(){getFiltered().forEach(s=>selected.add(s.no));render();}
 function clearAll(){selected.clear();render();}
 document.getElementById('unitFilter').addEventListener('change',render);
 document.getElementById('searchInput').addEventListener('input',render);
-// โหลดข้อมูลตอนเริ่ม: GitHub ก่อน → LocalStorage → แสดง import panel
 updateSyncBtn();
-window.addEventListener('DOMContentLoaded', ()=>{
-  (async()=>{
-    const fromGH = await loadFromGithub();
-    if(!fromGH){
-      const fromLS = loadFromStorage();
-      if(!fromLS){
-        // ไม่มีข้อมูล แสดง import panel ปกติ
-      }
+window.addEventListener('DOMContentLoaded', ()=>{\n  (async()=>{
+    const cfg = getGhConfig();
+    if(!cfg.token){
+      // ไม่มี token → แสดง prompt แล้วค่อยโหลด
+      showTokenPrompt(async()=>{
+        const fromGH = await loadFromGithub();
+        if(!fromGH) loadFromStorage();
+      });
+    } else {
+      const fromGH = await loadFromGithub();
+      if(!fromGH) loadFromStorage();
     }
   })();
 });

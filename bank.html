@@ -194,12 +194,39 @@ const BUILTIN = [{"name":"พ.ต.ธำรงค์ ชมอินทร์","
    ====================================================== */
 const STORAGE_KEY = 'bank_accounts_extra';
 const OVERRIDE_KEY = 'bank_accounts_override';
-const GH = { token:'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', user:'mizzterdonuttz-code', repo:'panchor-finance', file:'bank_data.json' };
+const GH = { user:'mizzterdonuttz-code', repo:'panchor-finance', file:'bank_data.json' };
+const GH_TOKEN_KEY = 'gh_token';
+function getToken(){ return localStorage.getItem(GH_TOKEN_KEY)||''; }
+function checkTokenOrPrompt(callback){ if(getToken()){ if(callback)callback(); return; } showTokenPrompt(callback); }
+function showTokenPrompt(callback){
+  let old=document.getElementById('__token_prompt'); if(old)old.remove();
+  const overlay=document.createElement('div'); overlay.id='__token_prompt';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML=`<div style="background:#fff;border-radius:14px;padding:2rem;width:90%;max-width:420px;font-family:Sarabun,sans-serif;">
+    <div style="font-size:20px;font-weight:700;color:#1a3a6b;margin-bottom:8px;">🔑 ตั้งค่าครั้งแรก</div>
+    <div style="font-size:14px;color:#666;margin-bottom:16px;line-height:1.6;">กรอก GitHub Personal Access Token เพื่อเปิดใช้งานการซิงค์ข้อมูล<br>กรอกครั้งเดียวต่อเครื่อง browser จะจำให้อัตโนมัติ</div>
+    <input id="__token_input" type="password" placeholder="ghp_xxxxxxxxxxxx" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box;margin-bottom:12px;">
+    <div style="font-size:12px;color:#999;margin-bottom:16px;">สร้าง Token ได้ที่ github.com → Settings → Developer settings → Personal access tokens → Classic (scope: repo)</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="document.getElementById('__token_prompt').remove()" style="flex:1;padding:10px;border:1.5px solid #ddd;border-radius:8px;background:#fff;font-family:inherit;font-size:14px;cursor:pointer;">ยกเลิก</button>
+      <button onclick="saveTokenFromPrompt()" style="flex:2;padding:10px;border:none;border-radius:8px;background:#1a3a6b;color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">บันทึกและเชื่อมต่อ</button>
+    </div></div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('__token_input').focus();
+  window.__tokenCallback=callback;
+}
+function saveTokenFromPrompt(){
+  const token=document.getElementById('__token_input').value.trim();
+  if(!token){alert('กรุณากรอก Token');return;}
+  localStorage.setItem(GH_TOKEN_KEY,token);
+  document.getElementById('__token_prompt').remove();
+  if(window.__tokenCallback)window.__tokenCallback();
+}
 
 async function ghGet() {
   try {
     const r = await fetch(`https://api.github.com/repos/${GH.user}/${GH.repo}/contents/${GH.file}`,
-      { headers:{ Authorization:'token '+GH.token, Accept:'application/vnd.github.v3+json' }});
+      { headers:{ Authorization:'token '+getToken(), Accept:'application/vnd.github.v3+json' }});
     if(!r.ok) return null;
     const j = await r.json();
     const bytes = Uint8Array.from(atob(j.content.replace(/\n/g,'')), c => c.charCodeAt(0));
@@ -215,7 +242,7 @@ async function ghPut(data, sha) {
     const content = btoa(binary);
     const body = { message:'update bank_data', content, sha };
     await fetch(`https://api.github.com/repos/${GH.user}/${GH.repo}/contents/${GH.file}`,
-      { method:'PUT', headers:{ Authorization:'token '+GH.token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+      { method:'PUT', headers:{ Authorization:'token '+getToken(), Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
   } catch(e) { console.error('ghPut error:', e); }
 }
 async function syncBank() {
@@ -491,15 +518,17 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
 });
 
-// init — โหลดข้อมูลจาก GitHub ก่อน แล้วค่อย render
+// init — เช็ค token ก่อน แล้วโหลดข้อมูลจาก GitHub
 (async () => {
-  const res = await ghGet();
-  if(res) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data.extra||[]));
-    localStorage.setItem(OVERRIDE_KEY, JSON.stringify(res.data.overrides||{}));
-    _bankSha = res.sha;
-  }
-  addRow();
+  checkTokenOrPrompt(async () => {
+    const res = await ghGet();
+    if(res) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data.extra||[]));
+      localStorage.setItem(OVERRIDE_KEY, JSON.stringify(res.data.overrides||{}));
+      _bankSha = res.sha;
+    }
+    addRow();
+  });
 })();
 </script>
 </body>
