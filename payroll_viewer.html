@@ -223,6 +223,43 @@ body{font-family:'Sarabun','Noto Sans Thai',sans-serif;background:#eef0f3;min-he
   </div>
 </div>
 
+<!-- Edit Month Panel -->
+<div class="admin-panel" id="editMonthPanel" onclick="if(event.target===this)closeEditMonth()">
+  <div class="admin-box">
+    <h2 id="editMonthTitle">✏️ แก้ไขข้อมูล</h2>
+    <input type="text" id="editSearchInput" placeholder="ค้นหาชื่อ..." oninput="renderEditList(MONTHS[_editMonth],this.value)"
+      style="width:100%;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;margin-bottom:10px;">
+    <div id="editPersonList" style="max-height:400px;overflow-y:auto;border:1px solid #eee;border-radius:8px;"></div>
+    <button onclick="closeEditMonth()" style="margin-top:14px;width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;background:#fff;font-family:inherit;font-size:14px;cursor:pointer;">ปิด</button>
+  </div>
+</div>
+
+<!-- Edit Person Panel -->
+<div class="admin-panel" id="editPersonPanel" onclick="if(event.target===this)closeEditPerson()">
+  <div class="admin-box">
+    <h2>✏️ แก้ไขรายบุคคล</h2>
+    <div id="epName" style="font-size:16px;font-weight:700;color:#0d2240;margin-bottom:16px;"></div>
+    <div style="display:grid;gap:10px;">
+      <label style="font-size:13px;color:#666;">เงินเดือน
+        <input type="number" id="epSalary" style="width:100%;margin-top:4px;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+      </label>
+      <label style="font-size:13px;color:#666;">รวมรายรับ
+        <input type="number" id="epTotalIncome" style="width:100%;margin-top:4px;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+      </label>
+      <label style="font-size:13px;color:#666;">รวมรายหัก
+        <input type="number" id="epTotalDeduct" style="width:100%;margin-top:4px;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+      </label>
+      <label style="font-size:13px;color:#666;font-weight:700;">ยอดสุทธิ
+        <input type="number" id="epNet" style="width:100%;margin-top:4px;padding:8px 12px;border:2px solid #1a3a6b;border-radius:8px;font-family:inherit;font-size:16px;font-weight:700;box-sizing:border-box;">
+      </label>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button onclick="closeEditPerson()" style="flex:1;padding:10px;border:1.5px solid #ddd;border-radius:8px;background:#fff;font-family:inherit;font-size:14px;cursor:pointer;">ยกเลิก</button>
+      <button onclick="saveEditPerson()" style="flex:2;padding:10px;border:none;border-radius:8px;background:#1a3a6b;color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────
@@ -563,6 +600,7 @@ function renderAdminMonthList(){
     <div class="month-item">
       <span class="month-item-name">📅 ${k}</span>
       <span class="month-item-count">${MONTHS[k].length} คน</span>
+      <button onclick="openEditMonth(${JSON.stringify(k)})" style="background:#1a3a6b;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit;">✏️ แก้ไข</button>
       <button class="btn-delete" onclick="deleteMonth(${JSON.stringify(k)})">🗑</button>
     </div>`).join('');
 }
@@ -571,6 +609,57 @@ function clearAllData(){
   if(!confirm('ล้างข้อมูลทั้งหมด?'))return;
   localStorage.removeItem('payroll_excel_months');
   MONTHS={}; saveLocal(); initMonthUI(); renderAdminMonthList();
+}
+
+// ── EDIT MONTH ───────────────────────────────────────────────────────
+let _editMonth = null;
+function openEditMonth(k){
+  _editMonth = k;
+  const persons = MONTHS[k];
+  const panel = document.getElementById('editMonthPanel');
+  document.getElementById('editMonthTitle').textContent = `✏️ แก้ไขข้อมูล — ${k} (${persons.length} คน)`;
+  renderEditList(persons, '');
+  panel.classList.add('show');
+}
+function closeEditMonth(){ document.getElementById('editMonthPanel').classList.remove('show'); _editMonth=null; }
+function renderEditList(persons, q){
+  const norm = s => s.toLowerCase().replace(/\s+/g,'');
+  const filtered = q ? persons.filter(p=>norm(p.name).includes(norm(q))) : persons;
+  const el = document.getElementById('editPersonList');
+  if(!filtered.length){ el.innerHTML='<div style="color:#aaa;padding:12px;text-align:center;font-size:13px;">ไม่พบรายชื่อ</div>'; return; }
+  el.innerHTML = filtered.map((p,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #f0f0f0;">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:#0d2240;">${p.name}</div>
+        <div style="font-size:12px;color:#888;">สุทธิ: ${p.net.toLocaleString('th-TH')} บาท</div>
+      </div>
+      <button onclick="openEditPerson(${JSON.stringify(_editMonth)},${persons.indexOf(p)})"
+        style="background:#1a3a6b;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ แก้ไข</button>
+    </div>`).join('');
+}
+
+let _editPersonIdx = null;
+function openEditPerson(month, idx){
+  _editMonth = month; _editPersonIdx = idx;
+  const p = MONTHS[month][idx];
+  document.getElementById('epName').textContent = p.name;
+  document.getElementById('epSalary').value = p.salary||0;
+  document.getElementById('epNet').value = p.net||0;
+  document.getElementById('epTotalIncome').value = p.total_income||0;
+  document.getElementById('epTotalDeduct').value = p.total_deduct||0;
+  document.getElementById('editPersonPanel').classList.add('show');
+}
+function closeEditPerson(){ document.getElementById('editPersonPanel').classList.remove('show'); }
+function saveEditPerson(){
+  const p = MONTHS[_editMonth][_editPersonIdx];
+  p.salary = parseFloat(document.getElementById('epSalary').value)||0;
+  p.total_income = parseFloat(document.getElementById('epTotalIncome').value)||0;
+  p.total_deduct = parseFloat(document.getElementById('epTotalDeduct').value)||0;
+  p.net = parseFloat(document.getElementById('epNet').value)||0;
+  saveLocal(); initMonthUI();
+  closeEditPerson();
+  renderEditList(MONTHS[_editMonth], document.getElementById('editSearchInput').value);
+  alert('✅ บันทึกแล้ว — กด Push เพื่ออัปเดต GitHub');
 }
 
 // ── VIEWER HTML ───────────────────────────────────────────────────────
