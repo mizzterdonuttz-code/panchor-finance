@@ -1128,10 +1128,10 @@ function clearAll(){selected.clear();render();}
 document.getElementById('unitFilter').addEventListener('change',render);
 document.getElementById('searchInput').addEventListener('input',render);
 updateSyncBtn();
-window.addEventListener('DOMContentLoaded', ()=>{\n  (async()=>{
+window.addEventListener('DOMContentLoaded', ()=>{
+  (async()=>{
     const cfg = getGhConfig();
     if(!cfg.token){
-      // ไม่มี token → แสดง prompt แล้วค่อยโหลด
       showTokenPrompt(async()=>{
         const fromGH = await loadFromGithub();
         if(!fromGH) loadFromStorage();
