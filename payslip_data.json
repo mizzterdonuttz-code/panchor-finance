@@ -2539,12 +2539,12 @@
         },
         "1209301150821": {
           "days": 10,
-          "deductDays": 10,
+          "deductDays": 0,
           "extra": 0
         },
         "1200601376991": {
           "days": 10,
-          "deductDays": 10,
+          "deductDays": 0,
           "extra": 0
         },
         "1700200152256": {
