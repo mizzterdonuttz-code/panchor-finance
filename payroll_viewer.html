@@ -251,6 +251,9 @@ body{font-family:'Sarabun','Noto Sans Thai',sans-serif;background:#eef0f3;min-he
       <label style="font-size:13px;color:#666;">ชื่อ-สกุล
         <input type="text" id="epName" style="width:100%;margin-top:4px;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
       </label>
+      <label style="font-size:13px;color:#666;">เลขบัตรประชาชน 13 หลัก <span style="color:#999;font-size:11px;">(กรอกเฉพาะเมื่อต้องการตั้ง PIN ใหม่)</span>
+        <input type="text" id="epPid" maxlength="13" placeholder="เว้นว่างไว้ถ้าไม่เปลี่ยน" style="width:100%;margin-top:4px;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+      </label>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
         <label style="font-size:13px;color:#666;">ระดับ
           <input type="text" id="epLevel" style="width:100%;margin-top:4px;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
@@ -446,7 +449,7 @@ async function parseExcel(file){
   const buf=await file.arrayBuffer();
   const wb=XLSX.read(buf,{type:'array'});
   const ws=wb.Sheets[wb.SheetNames[0]];
-  const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+  const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
   setProgress(40,`พบ ${rows.length} แถว — กำลังประมวลผล...`);
 
   // detect month from filename or first row
@@ -454,7 +457,7 @@ async function parseExcel(file){
 
   const persons=[];
   for(const row of rows){
-    const pid=String(row['เลขประจำตัวประชาชน']||'').trim().replace(/\.0$/,'');
+    const pid=String(row['เลขประจำตัวประชาชน']||'').replace(/[^0-9]/g,'');
     if(!pid||pid==='') continue;
     const rank=String(row['ยศ']||'').trim();
     const fname=String(row['ชื่อ']||'').trim();
@@ -680,6 +683,7 @@ function openEditPerson(month, idx){
   _editMonth = month; _editPersonIdx = idx;
   const p = MONTHS[month][idx];
   document.getElementById('epName').value = p.name||'';
+  document.getElementById('epPid').value = '';
   document.getElementById('epLevel').value = p.level||'';
   document.getElementById('epGrade').value = p.grade||'';
   document.getElementById('epSalary').value = p.salary||0;
@@ -721,18 +725,27 @@ function collectItemRows(containerId){
   return obj;
 }
 
-function saveEditPerson(){
+async function saveEditPerson(){
   const p = MONTHS[_editMonth][_editPersonIdx];
-  p.name = document.getElementById('epName').value.trim() || p.name;
+  const newName = document.getElementById('epName').value.trim() || p.name;
+  const newPid = document.getElementById('epPid').value.replace(/[^0-9]/g,'');
+  const nameChanged = newName !== p.name;
+  p.name = newName;
   p.level = document.getElementById('epLevel').value.trim();
   p.grade = document.getElementById('epGrade').value.trim();
   p.salary = parseFloat(document.getElementById('epSalary').value)||0;
   p.income = collectItemRows('epIncomeRows');
   p.deduct = collectItemRows('epDeductRows');
-  // คำนวณยอดรวมใหม่อัตโนมัติ
   p.total_income = Object.values(p.income).reduce((a,b)=>a+b,0);
   p.total_deduct = Object.values(p.deduct).reduce((a,b)=>a+b,0);
   p.net = Math.round((p.total_income - p.total_deduct)*100)/100;
+  // ถ้ากรอกเลขบัตรใหม่ หรือแก้ชื่อ → สร้าง hash PIN ใหม่
+  if(newPid.length === 13){
+    p.h = await sha256(p.name+'|'+newPid.slice(-4));
+  } else if(nameChanged){
+    alert('⚠️ คุณแก้ชื่อแล้ว ทำให้ PIN เดิมใช้ไม่ได้ กรุณากรอกเลขบัตร 13 หลักเพื่อตั้ง PIN ใหม่');
+    return;
+  }
   saveLocal(); initMonthUI();
   closeEditPerson();
   renderEditList(MONTHS[_editMonth], document.getElementById('editSearchInput').value);
