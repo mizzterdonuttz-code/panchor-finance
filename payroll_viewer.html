@@ -245,22 +245,43 @@ body{font-family:'Sarabun','Noto Sans Thai',sans-serif;background:#eef0f3;min-he
 
 <!-- Edit Person Panel -->
 <div class="admin-panel" id="editPersonPanel" onclick="if(event.target===this)closeEditPerson()">
-  <div class="admin-box">
+  <div class="admin-box" style="max-width:480px;">
     <h2>✏️ แก้ไขรายบุคคล</h2>
-    <div id="epName" style="font-size:16px;font-weight:700;color:#0d2240;margin-bottom:16px;"></div>
     <div style="display:grid;gap:10px;">
-      <label style="font-size:13px;color:#666;">เงินเดือน
-        <input type="number" id="epSalary" style="width:100%;margin-top:4px;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+      <label style="font-size:13px;color:#666;">ชื่อ-สกุล
+        <input type="text" id="epName" style="width:100%;margin-top:4px;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
       </label>
-      <label style="font-size:13px;color:#666;">รวมรายรับ
-        <input type="number" id="epTotalIncome" style="width:100%;margin-top:4px;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
-      </label>
-      <label style="font-size:13px;color:#666;">รวมรายหัก
-        <input type="number" id="epTotalDeduct" style="width:100%;margin-top:4px;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
-      </label>
-      <label style="font-size:13px;color:#666;font-weight:700;">ยอดสุทธิ
-        <input type="number" id="epNet" style="width:100%;margin-top:4px;padding:8px 12px;border:2px solid #1a3a6b;border-radius:8px;font-family:inherit;font-size:16px;font-weight:700;box-sizing:border-box;">
-      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <label style="font-size:13px;color:#666;">ระดับ
+          <input type="text" id="epLevel" style="width:100%;margin-top:4px;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+        </label>
+        <label style="font-size:13px;color:#666;">ชั้น
+          <input type="text" id="epGrade" style="width:100%;margin-top:4px;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+        </label>
+        <label style="font-size:13px;color:#666;">เงินเดือน
+          <input type="number" id="epSalary" style="width:100%;margin-top:4px;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box;">
+        </label>
+      </div>
+
+      <div style="margin-top:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:14px;font-weight:700;color:#1a7a4a;">💚 รายการรับ</span>
+          <button onclick="addItemRow('epIncomeRows')" style="background:#e1f5ee;color:#0f6e56;border:none;border-radius:6px;padding:4px 12px;font-size:13px;cursor:pointer;font-family:inherit;">+ เพิ่ม</button>
+        </div>
+        <div id="epIncomeRows"></div>
+      </div>
+
+      <div style="margin-top:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:14px;font-weight:700;color:#c0392b;">🔴 รายการหัก</span>
+          <button onclick="addItemRow('epDeductRows')" style="background:#fce4e4;color:#c0392b;border:none;border-radius:6px;padding:4px 12px;font-size:13px;cursor:pointer;font-family:inherit;">+ เพิ่ม</button>
+        </div>
+        <div id="epDeductRows"></div>
+      </div>
+
+      <div style="background:#f5f8ff;border-radius:8px;padding:10px 12px;font-size:13px;color:#666;margin-top:4px;">
+        💡 ยอดรวมรับ / รวมหัก / สุทธิ จะคำนวณอัตโนมัติจากรายการด้านบน
+      </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:16px;">
       <button onclick="closeEditPerson()" style="flex:1;padding:10px;border:1.5px solid #ddd;border-radius:8px;background:#fff;font-family:inherit;font-size:14px;cursor:pointer;">ยกเลิก</button>
@@ -658,20 +679,60 @@ let _editPersonIdx = null;
 function openEditPerson(month, idx){
   _editMonth = month; _editPersonIdx = idx;
   const p = MONTHS[month][idx];
-  document.getElementById('epName').textContent = p.name;
+  document.getElementById('epName').value = p.name||'';
+  document.getElementById('epLevel').value = p.level||'';
+  document.getElementById('epGrade').value = p.grade||'';
   document.getElementById('epSalary').value = p.salary||0;
-  document.getElementById('epNet').value = p.net||0;
-  document.getElementById('epTotalIncome').value = p.total_income||0;
-  document.getElementById('epTotalDeduct').value = p.total_deduct||0;
+  renderItemRows('epIncomeRows', p.income||{});
+  renderItemRows('epDeductRows', p.deduct||{});
   document.getElementById('editPersonPanel').classList.add('show');
 }
 function closeEditPerson(){ document.getElementById('editPersonPanel').classList.remove('show'); }
+
+function renderItemRows(containerId, obj){
+  const el = document.getElementById(containerId);
+  const entries = Object.entries(obj);
+  el.innerHTML = entries.map((e,i)=>itemRowHTML(e[0], e[1], i)).join('') || '<div style="color:#aaa;font-size:13px;padding:6px;">— ยังไม่มีรายการ —</div>';
+}
+function itemRowHTML(key, val, i){
+  return `<div class="item-row" style="display:flex;gap:6px;margin-bottom:6px;align-items:center;">
+    <input type="text" value="${(key||'').replace(/"/g,'&quot;')}" placeholder="ชื่อรายการ"
+      style="flex:2;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-family:inherit;font-size:13px;box-sizing:border-box;">
+    <input type="number" value="${val||0}" placeholder="0"
+      style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-family:inherit;font-size:13px;box-sizing:border-box;">
+    <button onclick="this.parentElement.remove()" style="background:#fce4e4;color:#c0392b;border:none;border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;">🗑</button>
+  </div>`;
+}
+function addItemRow(containerId){
+  const el = document.getElementById(containerId);
+  const placeholder = el.querySelector('div[style*="ยังไม่มี"]');
+  if(placeholder) el.innerHTML = '';
+  el.insertAdjacentHTML('beforeend', itemRowHTML('', 0));
+}
+function collectItemRows(containerId){
+  const el = document.getElementById(containerId);
+  const obj = {};
+  el.querySelectorAll('.item-row').forEach(row=>{
+    const inputs = row.querySelectorAll('input');
+    const k = inputs[0].value.trim();
+    const v = parseFloat(inputs[1].value)||0;
+    if(k) obj[k] = v;
+  });
+  return obj;
+}
+
 function saveEditPerson(){
   const p = MONTHS[_editMonth][_editPersonIdx];
+  p.name = document.getElementById('epName').value.trim() || p.name;
+  p.level = document.getElementById('epLevel').value.trim();
+  p.grade = document.getElementById('epGrade').value.trim();
   p.salary = parseFloat(document.getElementById('epSalary').value)||0;
-  p.total_income = parseFloat(document.getElementById('epTotalIncome').value)||0;
-  p.total_deduct = parseFloat(document.getElementById('epTotalDeduct').value)||0;
-  p.net = parseFloat(document.getElementById('epNet').value)||0;
+  p.income = collectItemRows('epIncomeRows');
+  p.deduct = collectItemRows('epDeductRows');
+  // คำนวณยอดรวมใหม่อัตโนมัติ
+  p.total_income = Object.values(p.income).reduce((a,b)=>a+b,0);
+  p.total_deduct = Object.values(p.deduct).reduce((a,b)=>a+b,0);
+  p.net = Math.round((p.total_income - p.total_deduct)*100)/100;
   saveLocal(); initMonthUI();
   closeEditPerson();
   renderEditList(MONTHS[_editMonth], document.getElementById('editSearchInput').value);
