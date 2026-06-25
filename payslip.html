@@ -11,6 +11,29 @@
   src: url('https://db.onlinewebfonts.com/t/34b4b2b921f3f8a8b85a5c35d23f8e22.woff2') format('woff2'),
        url('https://db.onlinewebfonts.com/t/34b4b2b921f3f8a8b85a5c35d23f8e22.woff') format('woff');
 }
+
+#__toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-family: 'TH Sarabun PSK','Sarabun',sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  z-index: 99998;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+  max-width: 320px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+#__toast.show { opacity: 1; transform: translateY(0); }
+#__toast.success { background: #1e7e34; }
+#__toast.error   { background: #c0392b; }
+#__toast.loading { background: #1a3a6b; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -300,6 +323,23 @@ table.main tr:hover td{background:#f5f8fd;}
 </div>
 
 <script>
+
+let __toastTimer = null;
+function showToast(msg, type='success', duration=3000) {
+  let el = document.getElementById('__toast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = '__toast';
+    document.body.appendChild(el);
+  }
+  el.className = type;
+  el.textContent = msg;
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(__toastTimer);
+  if(duration > 0) __toastTimer = setTimeout(()=>{ el.classList.remove('show'); }, duration);
+}
+
 // unitFull อยู่ใน s.unitFull แล้ว
 let monthsData = {};
 let activeYYYYMM = null;
@@ -488,14 +528,14 @@ async function syncToGithub(silent=false){
     if(putR.ok){
       if(btn){ btn.textContent='✅ Synced!'; setTimeout(()=>{ btn.textContent='☁️ Sync'; btn.disabled=false; },2000); }
       const st=document.getElementById('importStatus');
-      if(st) st.textContent='☁️ Auto-synced '+new Date().toLocaleTimeString('th-TH');
+      showToast('☁️ Sync สำเร็จ — '+new Date().toLocaleTimeString('th-TH'), 'success', 2500);
     } else {
       const err=await putR.json();
       throw new Error(err.message||putR.status);
     }
   }catch(e){
     if(btn){ btn.textContent='❌'; btn.disabled=false; setTimeout(()=>{ btn.textContent='☁️ Sync'; },3000); }
-    if(!silent) alert('Sync ไม่สำเร็จ: '+e.message);
+    showToast('❌ Sync ไม่สำเร็จ: '+e.message, 'error', 5000);
   }
 }
 
@@ -519,7 +559,7 @@ async function loadFromGithub(){
     const ym = parsed.activeYYYYMM||Object.keys(monthsData).sort().pop();
     setActiveMonth(ym, false);
     renderMonthSelect();
-    document.getElementById('importStatus').textContent='☁️ โหลดข้อมูลจาก GitHub สำเร็จ';
+    showToast('☁️ โหลดข้อมูลจาก GitHub สำเร็จ', 'success', 2500);
     return true;
   }catch(e){ return false; }
 }

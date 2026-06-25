@@ -94,6 +94,19 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .badge-other { background: #f3f4f6; color: #374151; border-radius: 4px; padding: 1px 7px; font-size: 12px; }
 
 .tag-new { background:#dcfce7; color:#166534; border-radius:4px; padding:1px 6px; font-size:11px; margin-left:4px; }
+
+#__toast {
+  position: fixed; bottom: 24px; right: 24px;
+  padding: 12px 20px; border-radius: 10px;
+  font-family: 'Sarabun',sans-serif; font-size: 15px; font-weight: 600;
+  color: #fff; z-index: 99998; opacity: 0; transform: translateY(12px);
+  transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+  max-width: 320px; box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+#__toast.show { opacity:1; transform:translateY(0); }
+#__toast.success { background:#1e7e34; }
+#__toast.error   { background:#c0392b; }
+#__toast.loading { background:#1a3a6b; }
 </style>
 </head>
 <body><div id="__back_btn" style="position:fixed;top:12px;left:12px;z-index:99999;"><a href="/panchor-finance/" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #ddd;border-radius:999px;padding:6px 14px;font-family:Sarabun,sans-serif;font-size:14px;color:#333;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">← เมนูหลัก</a></div>
@@ -181,6 +194,16 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 </div>
 
 <script>
+
+let __toastTimer=null;
+function showToast(msg,type='success',duration=3000){
+  let el=document.getElementById('__toast');
+  if(!el){el=document.createElement('div');el.id='__toast';document.body.appendChild(el);}
+  el.className=type; el.textContent=msg; void el.offsetWidth; el.classList.add('show');
+  clearTimeout(__toastTimer);
+  if(duration>0) __toastTimer=setTimeout(()=>{el.classList.remove('show');},duration);
+}
+
 /* ======================================================
    DATA
    ====================================================== */
@@ -243,7 +266,7 @@ async function ghPut(data, sha) {
     const body = { message:'update bank_data', content, sha };
     await fetch(`https://api.github.com/repos/${GH.user}/${GH.repo}/contents/${GH.file}`,
       { method:'PUT', headers:{ Authorization:'token '+getToken(), Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
-  } catch(e) { console.error('ghPut error:', e); }
+  } catch(e) { console.error('ghPut error:', e); showToast('❌ Sync ไม่สำเร็จ: '+e.message,'error',5000); }
 }
 async function syncBank() {
   const res = await ghGet();
@@ -260,7 +283,7 @@ async function saveAndSync() {
   const data = { extra: loadExtra(), overrides: loadOverrides() };
   const res = await ghGet();
   await ghPut(data, res ? res.sha : _bankSha);
-  if(res) _bankSha = res.sha;
+  if(res) { _bankSha = res.sha; showToast('☁️ บันทึกสำเร็จ','success',2000); }
 }
 
 function loadExtra() {
@@ -526,6 +549,7 @@ document.addEventListener('keydown', e => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data.extra||[]));
       localStorage.setItem(OVERRIDE_KEY, JSON.stringify(res.data.overrides||{}));
       _bankSha = res.sha;
+      showToast('☁️ โหลดข้อมูลสำเร็จ','success',2000);
     }
     addRow();
   });

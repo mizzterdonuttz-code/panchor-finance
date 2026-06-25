@@ -81,6 +81,19 @@ tfoot td { font-weight:bold; background:#e8eaf6; }
   [contenteditable] { border-bottom-color:transparent; }
   .add-btn,.del-btn { display:none; }
 }
+
+#__toast {
+  position: fixed; bottom: 24px; right: 24px;
+  padding: 12px 20px; border-radius: 10px;
+  font-family: 'Sarabun',sans-serif; font-size: 15px; font-weight: 600;
+  color: #fff; z-index: 99998; opacity: 0; transform: translateY(12px);
+  transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+  max-width: 320px; box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+#__toast.show { opacity:1; transform:translateY(0); }
+#__toast.success { background:#1e7e34; }
+#__toast.error   { background:#c0392b; }
+#__toast.loading { background:#1a3a6b; }
 </style>
 </head>
 <body><div id="__back_btn" style="position:fixed;top:12px;left:12px;z-index:99999;"><a href="/panchor-finance/" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #ddd;border-radius:999px;padding:6px 14px;font-family:Sarabun,sans-serif;font-size:14px;color:#333;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">← เมนูหลัก</a></div>
@@ -286,6 +299,17 @@ tfoot td { font-weight:bold; background:#e8eaf6; }
 </div>
 
 <script>
+
+var __toastTimer=null;
+function showToast(msg,type,duration){
+  type=type||'success'; duration=duration||3000;
+  var el=document.getElementById('__toast');
+  if(!el){el=document.createElement('div');el.id='__toast';document.body.appendChild(el);}
+  el.className=type; el.textContent=msg; void el.offsetWidth; el.classList.add('show');
+  clearTimeout(__toastTimer);
+  if(duration>0) __toastTimer=setTimeout(function(){el.classList.remove('show');},duration);
+}
+
 var fmt   = n => isNaN(n)?'0.00':n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
 var raw   = el => parseFloat((el.innerText||'').replace(/,/g,''))||0;
 var getEl = id => document.getElementById(id);
@@ -498,7 +522,7 @@ async function applyLabels() {
   closeEdit();
   var res = await ghDebtGet('debt_labels.json');
   await ghDebtPut('debt_labels.json', obj, res ? res.sha : null);
-  setSt('✓ บันทึกแล้ว');
+  setSt('✓ บันทึกแล้ว'); showToast('☁️ บันทึกสำเร็จ','success',2000);
 }
 
 // ---- auto-save ----
@@ -522,8 +546,8 @@ async function autoSave() {
     idx = idx.filter(function(i){return i.key!==key;}); idx.unshift(meta);
     if(idx.length>100) idx=idx.slice(0,100);
     await ghDebtPut('debt_index.json', idx, idxRes ? idxRes.sha : null);
-    setSt('✓ บันทึกแล้ว');
-  } catch(e){setSt('⚠ บันทึกไม่สำเร็จ');}
+    setSt('✓ บันทึกแล้ว'); showToast('☁️ บันทึกสำเร็จ','success',2000);
+  } catch(e){setSt('⚠ บันทึกไม่สำเร็จ'); showToast('❌ บันทึกไม่สำเร็จ ตรวจสอบ Token หรือการเชื่อมต่อ','error',5000);}
 }
 
 // ---- search ----
@@ -571,7 +595,7 @@ async function init() {
   if(idx && idx.data.length > 0) {
     var last = idx.data[0];
     var rec = await ghDebtGet('debt_records/'+last.key+'.json');
-    if(rec){ getEl('debt-body').innerHTML='';getEl('in-body').innerHTML='';getEl('out-body').innerHTML='';restoreData(rec.data);setSt('✓ โหลดข้อมูลล่าสุด'); }
+    if(rec){ getEl('debt-body').innerHTML='';getEl('in-body').innerHTML='';getEl('out-body').innerHTML='';restoreData(rec.data);setSt('✓ โหลดข้อมูลล่าสุด'); showToast('☁️ โหลดข้อมูลสำเร็จ','success',2000); }
   }
 }
 checkTokenOrPrompt(function(){ init(); });
