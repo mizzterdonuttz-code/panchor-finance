@@ -198,9 +198,12 @@ table.main tr:hover td{background:#f5f8fd;}
       <div class="field"><label>หักค่าประกอบ (บ./วัน)</label><input type="text" id="cfgDailyDeduct" value="70" style="width:70px;"></div>
       <div class="field"><label>จำนวนวัน</label><input type="text" id="cfgDays" value="31" style="width:65px;"></div>
     </div>
-    <div class="controls">
+    <div class="controls" style="grid-template-columns:1fr 1fr 1fr auto auto;">
       <div class="field"><label>กรองหน่วย</label>
         <select id="unitFilter"><option value="all">— ทั้งหมด —</option></select>
+      </div>
+      <div class="field"><label>กรองขั้น</label>
+        <select id="levelFilter"><option value="all">— ทั้งหมด —</option></select>
       </div>
       <div class="field"><label>ค้นหาชื่อ / เลขบัตร</label>
         <input type="text" id="searchInput" placeholder="พิมพ์ชื่อ นามสกุล หรือเลขประจำตัว...">
@@ -939,6 +942,18 @@ function setActiveMonth(yyyymm, resetCfg){
     uf.innerHTML = '<option value="all">— ทั้งหมด —</option>';
     units.forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u;uf.appendChild(o);});
   }
+  // เติม dropdown ขั้น (เรียงตามเลขขั้นจากมากไปน้อย)
+  const lf = document.getElementById('levelFilter');
+  if(lf){
+    const curLv=lf.value||'all';
+    const allLevels=[...new Set(soldiers.map(s=>s.level).filter(Boolean))];
+    allLevels.sort((a,b)=>{
+      const na=parseInt((a.split('/')[1]||'0')), nb=parseInt((b.split('/')[1]||'0'));
+      return nb-na;
+    });
+    lf.innerHTML='<option value="all">— ทั้งหมด —</option>';
+    allLevels.forEach(lv=>{const o=document.createElement('option');o.value=lv;o.textContent=lv;if(lv===curLv)o.selected=true;lf.appendChild(o);});
+  }
   // ซ่อน importPanel
   const ip = document.getElementById('importPanel');
   if(ip) ip.style.display='none';
@@ -1012,25 +1027,47 @@ function renderSummaryInline(){
   const md = monthsData[ym];
   if(!md||md.soldiers.length===0){ panel.style.display='none'; return; }
   panel.style.display='block';
-  const list = md.soldiers;
+  // ใช้รายชื่อตามตัวกรองปัจจุบัน
+  const list = getFiltered();
+  const levelEl=document.getElementById('levelFilter');
+  const levelSel=levelEl?levelEl.value:'all';
+  const unitEl=document.getElementById('unitFilter');
+  const unitSel=unitEl?unitEl.value:'all';
+  if(list.length===0){
+    panel.innerHTML='<div style="padding:14px;color:#888;text-align:center;font-size:13.5px;">— ไม่มีรายชื่อตามตัวกรอง —</div>';
+    return;
+  }
   const totSal=list.reduce((a,s)=>a+s.salary,0);
   const totPhck=list.reduce((a,s)=>a+s.phck,0);
   const totDed=list.reduce((a,s)=>a+s.deduct,0);
   const totNet=list.reduce((a,s)=>a+calcNet(s),0);
-  const byUnit={};
+  // ถ้าเลือกขั้น → จัดกลุ่มตามขั้น, ไม่งั้น → จัดกลุ่มตามกองร้อย
+  const groupByLevel = (levelSel!=='all');
+  const groupKeyFn = groupByLevel ? (s=>s.level||'-') : (s=>s.unit);
+  const groupLabel = groupByLevel ? 'ขั้น' : 'กองร้อย';
+  const byGroup={};
   list.forEach(s=>{
-    if(!byUnit[s.unit])byUnit[s.unit]={count:0,sal:0,phck:0,ded:0,net:0};
-    byUnit[s.unit].count++;
-    byUnit[s.unit].sal+=s.salary;
-    byUnit[s.unit].phck+=s.phck;
-    byUnit[s.unit].ded+=s.deduct;
-    byUnit[s.unit].net+=calcNet(s);
+    const k=groupKeyFn(s);
+    if(!byGroup[k])byGroup[k]={count:0,sal:0,phck:0,ded:0,net:0};
+    byGroup[k].count++;
+    byGroup[k].sal+=s.salary;
+    byGroup[k].phck+=s.phck;
+    byGroup[k].ded+=s.deduct;
+    byGroup[k].net+=calcNet(s);
   });
+  // เรียง key: ถ้าขั้นเรียงตามเลข / ถ้ากองร้อยเรียงตาม UNIT_ORDER
+  const UNIT_ORDER=['ร้อย.บก.','ร้อย.1','ร้อย.2','ร้อย.คม.','ทหารใหม่'];
+  let keys=Object.keys(byGroup);
+  if(groupByLevel){
+    keys.sort((a,b)=>parseInt((b.split('/')[1]||'0'))-parseInt((a.split('/')[1]||'0')));
+  } else {
+    keys=UNIT_ORDER.filter(u=>byGroup[u]).concat(keys.filter(k=>!UNIT_ORDER.includes(k)));
+  }
   let rows='';
-  Object.keys(byUnit).forEach(u=>{
-    const d=byUnit[u];
+  keys.forEach(k=>{
+    const d=byGroup[k];
     rows+=`<tr>
-      <td style="padding:7px 12px;">${u}</td>
+      <td style="padding:7px 12px;">${k}</td>
       <td style="padding:7px 12px;text-align:right;">${d.count} คน</td>
       <td style="padding:7px 12px;text-align:right;font-variant-numeric:tabular-nums;">${fmt(d.sal)}</td>
       <td style="padding:7px 12px;text-align:right;font-variant-numeric:tabular-nums;">${fmt(d.phck)}</td>
@@ -1038,16 +1075,19 @@ function renderSummaryInline(){
       <td style="padding:7px 12px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:#1a4f8a;">${fmt(d.net)}</td>
     </tr>`;
   });
+  let titleSuffix='';
+  if(levelSel!=='all') titleSuffix=' — ขั้น '+levelSel;
+  else if(unitSel!=='all') titleSuffix=' — '+unitSel;
   panel.innerHTML=`
     <div style="background:#1a4f8a;color:#fff;padding:8px 14px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;">
-      <span>📊 สรุปยอดเงินเดือน — ${md.label}</span>
-      <span style="font-size:12px;opacity:.8;">${list.length} คน ทั้งหมด</span>
+      <span>📊 สรุปยอดเงินเดือน — ${md.label}${titleSuffix}</span>
+      <span style="font-size:12px;opacity:.8;">${list.length} คน</span>
     </div>
     <div style="overflow-x:auto;">
     <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
       <thead>
         <tr style="background:#f0f4fb;border-bottom:1.5px solid #c5d8f0;">
-          <th style="padding:8px 12px;text-align:left;font-weight:600;color:#444;">กองร้อย</th>
+          <th style="padding:8px 12px;text-align:left;font-weight:600;color:#444;">${groupLabel}</th>
           <th style="padding:8px 12px;text-align:right;font-weight:600;color:#444;">จำนวน</th>
           <th style="padding:8px 12px;text-align:right;font-weight:600;color:#444;">เงินเดือน</th>
           <th style="padding:8px 12px;text-align:right;font-weight:600;color:#444;">พชค.</th>
@@ -1121,8 +1161,10 @@ function loadSoldiers(data, resetMonth){
 
 function getFiltered(){
   const unit=document.getElementById('unitFilter').value;
+  const levelEl=document.getElementById('levelFilter');
+  const level=levelEl?levelEl.value:'all';
   const q=document.getElementById('searchInput').value.toLowerCase();
-  return soldiers.filter(s=>(unit==='all'||s.unit===unit)&&(!q||s.fname.includes(q)||s.lname.includes(q)||s.id.includes(q)));
+  return soldiers.filter(s=>(unit==='all'||s.unit===unit)&&(level==='all'||s.level===level)&&(!q||s.fname.includes(q)||s.lname.includes(q)||s.id.includes(q)));
 }
 function render(){
   const cfg=getCfg(), filtered=getFiltered();
@@ -1165,7 +1207,8 @@ function toggleOne(no,v){v?selected.add(no):selected.delete(no);updateCount();up
 function toggleAll(v){getFiltered().forEach(s=>v?selected.add(s.no):selected.delete(s.no));render();}
 function selectAll(){getFiltered().forEach(s=>selected.add(s.no));render();}
 function clearAll(){selected.clear();render();}
-document.getElementById('unitFilter').addEventListener('change',render);
+document.getElementById('unitFilter').addEventListener('change',()=>{render();renderSummaryInline();});
+document.getElementById('levelFilter').addEventListener('change',()=>{render();renderSummaryInline();});
 document.getElementById('searchInput').addEventListener('input',render);
 updateSyncBtn();
 window.addEventListener('DOMContentLoaded', ()=>{
