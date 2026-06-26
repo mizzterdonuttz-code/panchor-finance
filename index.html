@@ -355,6 +355,58 @@
     .ai-key-hint a { color:#5aabf5; }
   }
 
+
+  /* AI Assistant */
+  .ai-section { margin-bottom:1.5rem; }
+  .ai-key-box { background:#f8f6f2; border:1px solid #e8e6e0; border-radius:10px; padding:14px 16px; margin-bottom:12px; }
+  .ai-key-title { font-size:13px; font-weight:600; color:#555; margin-bottom:8px; }
+  .ai-key-row { display:flex; gap:8px; margin-bottom:6px; }
+  .ai-key-row input { flex:1; border:1.5px solid #ddd; border-radius:8px; padding:7px 10px; font-size:13px; font-family:'Sarabun',sans-serif; outline:none; color:#333; background:#fff; }
+  .ai-key-row input:focus { border-color:#185fa5; }
+  .ai-key-row button { background:#185fa5; border:none; color:#fff; border-radius:8px; padding:7px 14px; font-size:13px; cursor:pointer; font-family:'Sarabun',sans-serif; }
+  .ai-key-row button:hover { background:#1470c0; }
+  .ai-key-hint { font-size:11px; color:#aaa; }
+  .ai-key-hint a { color:#185fa5; }
+  .ai-key-status { font-size:12px; color:#e07000; margin-top:6px; font-weight:500; }
+  .ai-key-status.ok { color:#0f6e56; }
+  .agent-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .agent-tab { padding:5px 12px; border-radius:20px; font-size:12px; font-weight:500; border:1.5px solid #e0e0e0; background:#fff; cursor:pointer; color:#666; font-family:'Sarabun',sans-serif; }
+  .agent-tab:hover { border-color:#185fa5; color:#185fa5; }
+  .agent-tab.active { background:#185fa5; color:#fff; border-color:#185fa5; }
+  #ai-msgs { background:#fafaf8; border:1px solid #e8e6e0; border-radius:10px; padding:10px 14px; margin-bottom:10px; max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; min-height:56px; }
+  #ai-msgs::-webkit-scrollbar { width:4px; }
+  #ai-msgs::-webkit-scrollbar-thumb { background:#ddd; border-radius:2px; }
+  .am { font-size:13px; line-height:1.5; }
+  .am .aw { font-weight:600; margin-right:5px; }
+  .am.user .aw { color:#185fa5; }
+  .am.bot .aw { color:#0f6e56; }
+  .am.sys { color:#999; font-style:italic; font-size:12px; }
+  .am.warn .aw { color:#c47400; }
+  .am.ok .aw { color:#0f6e56; }
+  .am .at { color:#333; }
+  .ai-drop { border:1.5px dashed #c8c4bc; border-radius:10px; padding:12px 16px; text-align:center; font-size:13px; color:#aaa; cursor:pointer; margin-bottom:10px; transition:all 0.15s; }
+  .ai-drop:hover, .ai-drop.drag { border-color:#185fa5; background:#f0f6ff; color:#185fa5; }
+  .ai-input-row { display:flex; gap:8px; align-items:flex-end; }
+  #ai-inp { flex:1; border:1.5px solid #ddd; border-radius:10px; padding:8px 12px; font-family:'Sarabun',sans-serif; font-size:14px; resize:none; max-height:80px; outline:none; line-height:1.5; background:#fff; color:#1a1a1a; }
+  #ai-inp:focus { border-color:#185fa5; }
+  #ai-send { background:#185fa5; color:#fff; border:none; border-radius:10px; padding:8px 18px; font-size:14px; font-family:'Sarabun',sans-serif; cursor:pointer; flex-shrink:0; }
+  #ai-send:hover { background:#1470c0; }
+  #ai-send:disabled { background:#aaa; cursor:default; }
+  @media (prefers-color-scheme: dark) {
+    .ai-key-box { background:#1e1e1e; border-color:#333; }
+    .ai-key-title { color:#aaa; }
+    .ai-key-row input { background:#111; border-color:#333; color:#ddd; }
+    #ai-msgs { background:#1a1a1a; border-color:#333; }
+    .am .at { color:#ddd; }
+    .am.sys { color:#555; }
+    .agent-tab { background:#1e1e1e; border-color:#333; color:#777; }
+    .agent-tab.active { background:#185fa5; color:#fff; }
+    .ai-drop { border-color:#333; color:#444; }
+    .ai-drop:hover, .ai-drop.drag { border-color:#5aabf5; background:#0c1f35; color:#5aabf5; }
+    #ai-inp { background:#111; border-color:#333; color:#ddd; }
+    .ai-key-hint a { color:#5aabf5; }
+  }
+
 </style>
 </head>
 <body>
@@ -404,213 +456,174 @@
   <hr>
 
   <div class="ai-section">
-    <div class="section-label">🤖 AI Assistant — สั่งงานหรือโยนไฟล์ Excel</div>
+    <div class="section-label">🤖 AI Assistant (Gemini ฟรี)</div>
 
-    <!-- Chat messages -->
+    <div class="ai-key-box">
+      <div class="ai-key-title">🔑 ใส่ Gemini API Key</div>
+      <div class="ai-key-row">
+        <input type="password" id="ai-key-inp" placeholder="วาง API Key ที่นี่ (AIza...)">
+        <button onclick="aiSaveKey()">บันทึก</button>
+      </div>
+      <div class="ai-key-hint">รับฟรีที่ <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> — ฟรี 1,500 req/วัน ไม่ต้องบัตรเครดิต</div>
+      <div class="ai-key-status" id="ai-key-status">⚠️ ยังไม่มี API Key</div>
+    </div>
+
+    <div class="agent-tabs" id="agent-tabs"></div>
     <div id="ai-msgs"></div>
 
-    <!-- Agent selector -->
-    <div class="agent-tabs" id="agent-tabs"></div>
-
-    <!-- File drop -->
     <div class="ai-drop" id="ai-drop"
       onclick="document.getElementById('ai-file').click()"
       ondragover="event.preventDefault();this.classList.add('drag')"
       ondragleave="this.classList.remove('drag')"
       ondrop="aiDrop(event)">
-      <span>📂</span> โยนไฟล์ Excel มาที่นี่ — AI จะแยกงานให้เองว่าเป็นของใคร
-      <input type="file" id="ai-file" accept=".xlsx,.xls" multiple style="display:none"
-        onchange="aiHandleFiles(this.files)">
+      📂 โยนไฟล์ Excel มาที่นี่ — AI แยกงานให้เองว่าเป็นของใคร
+      <input type="file" id="ai-file" accept=".xlsx,.xls" multiple style="display:none" onchange="aiHandleFiles(this.files)">
     </div>
 
-    <!-- Input -->
     <div class="ai-input-row">
-      <textarea id="ai-inp" placeholder="พิมพ์สั่งงาน agent ที่เลือก... (Enter ส่ง)"
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend();}"
-        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"
-        rows="1"></textarea>
-      <button id="ai-btn" onclick="aiSend()">ส่ง</button>
+      <textarea id="ai-inp" placeholder="พิมพ์สั่งงาน... (Enter ส่ง)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend();}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'" rows="1"></textarea>
+      <button id="ai-send" onclick="aiSend()">ส่ง</button>
     </div>
   </div>
 
   <div class="footer">ระบบงานการเงิน พัน.ช.คมศ.พล.ช. &nbsp;|&nbsp; พัฒนาด้วย Claude AI &nbsp;|&nbsp; ปรับปรุง 2568</div>
 
-
 </div>
-
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-const AI_AGENTS = [
-  { id:'boss',     name:'👔 หัวหน้า',      sys:'คุณคือหัวหน้าฝ่ายการเงิน พัน.ช.คมศ.พล.ช. มีหน้าที่อนุมัติและตัดสินใจ ตอบสั้น ภาษาไทย' },
-  { id:'deputy',   name:'📋 ผช.หัวหน้า',   sys:'คุณคือผู้ช่วยหัวหน้าฝ่ายการเงิน มีหน้าที่ตรวจงาน ตอบสั้น ภาษาไทย' },
-  { id:'salary',   name:'💰 เงินเดือน',     sys:'คุณคือเจ้าหน้าที่เงินเดือนพลทหาร พัน.ช.คมศ.พล.ช. ตอบสั้น ภาษาไทย' },
-  { id:'allow',    name:'🍽️ เบี้ยเลี้ยง',  sys:'คุณคือเจ้าหน้าที่เบี้ยเลี้ยง พัน.ช.คมศ.พล.ช. ตอบสั้น ภาษาไทย' },
-  { id:'bank',     name:'🏦 บัญชี',         sys:'คุณคือเจ้าหน้าที่ค้นหาเลขบัญชีธนาคาร พัน.ช.คมศ.พล.ช. ตอบสั้น ภาษาไทย' },
-  { id:'general',  name:'🔧 ช่วยงาน',       sys:'คุณคือเจ้าหน้าที่ช่วยงานทั่วไป พัน.ช.คมศ.พล.ช. ตอบสั้น ภาษาไทย' },
+const AG=[
+  {id:'boss',  name:'👔 หัวหน้า',    sys:'คุณคือหัวหน้าฝ่ายการเงิน พัน.ช.คมศ.พล.ช. ตอบสั้น ภาษาไทย'},
+  {id:'dep',   name:'📋 ผช.หน.',     sys:'คุณคือผู้ช่วยหัวหน้าฝ่ายการเงิน ตอบสั้น ภาษาไทย'},
+  {id:'sal',   name:'💰 เงินเดือน',  sys:'คุณคือเจ้าหน้าที่เงินเดือนพลทหาร พัน.ช.คมศ.พล.ช. ตอบสั้น ภาษาไทย'},
+  {id:'all',   name:'🍽️ เบี้ยเลี้ยง',sys:'คุณคือเจ้าหน้าที่เบี้ยเลี้ยง พัน.ช.คมศ.พล.ช. ตอบสั้น ภาษาไทย'},
+  {id:'bank',  name:'🏦 บัญชี',      sys:'คุณคือเจ้าหน้าที่ค้นหาเลขบัญชีธนาคาร พัน.ช.คมศ.พล.ช. ตอบสั้น ภาษาไทย'},
+  {id:'gen',   name:'🔧 ช่วยงาน',    sys:'คุณคือเจ้าหน้าที่ช่วยงานทั่วไป พัน.ช.คมศ.พล.ช. ตอบสั้น ภาษาไทย'},
 ];
-let aiSel = AI_AGENTS[2]; // default: เงินเดือน
-let aiHist = {};
-let aiLoading = false;
-AI_AGENTS.forEach(a => aiHist[a.id] = []);
+let sel=AG[2], hist={}, busy=false;
+AG.forEach(a=>hist[a.id]=[]);
 
-// build agent tabs
-const tabs = document.getElementById('agent-tabs');
-AI_AGENTS.forEach((a,i) => {
-  const btn = document.createElement('button');
-  btn.className = 'agent-tab' + (a===aiSel?' active':'');
-  btn.textContent = a.name;
-  btn.onclick = () => {
-    aiSel = a;
-    document.querySelectorAll('.agent-tab').forEach((b,j) => b.classList.toggle('active', j===i));
-    aiMsg('sys', '', `→ ${a.name}`);
-  };
-  tabs.appendChild(btn);
+function aiGetKey(){return localStorage.getItem('gemini_key')||'';}
+function aiSaveKey(){
+  const v=document.getElementById('ai-key-inp').value.trim();
+  if(!v){alert('กรุณาใส่ API Key ก่อน');return;}
+  localStorage.setItem('gemini_key',v);
+  document.getElementById('ai-key-inp').value='';
+  aiKeyStatus();
+  aiMsg('sys','','✅ บันทึก API Key แล้ว พร้อมใช้งาน');
+}
+function aiKeyStatus(){
+  const el=document.getElementById('ai-key-status');
+  const k=aiGetKey();
+  el.textContent=k?'✅ มี API Key แล้ว (***'+k.slice(-4)+')':'⚠️ ยังไม่มี API Key — ใส่ด้านบนแล้วกดบันทึก';
+  el.className='ai-key-status'+(k?' ok':'');
+}
+
+const tabEl=document.getElementById('agent-tabs');
+AG.forEach((a,i)=>{
+  const b=document.createElement('button');
+  b.className='agent-tab'+(a===sel?' active':'');
+  b.textContent=a.name;
+  b.onclick=()=>{sel=a;tabEl.querySelectorAll('.agent-tab').forEach((x,j)=>x.classList.toggle('active',j===i));aiMsg('sys','','→ '+a.name);};
+  tabEl.appendChild(b);
 });
 
-function aiMsg(type, who, text) {
-  const box = document.getElementById('ai-msgs');
-  const d = document.createElement('div');
-  d.className = 'am ' + type;
-  d.innerHTML = (who ? `<span class="aw">${who}:</span>` : '') +
-    `<span class="at">${text.replace(/
-/g,'<br>')}</span>`;
-  box.appendChild(d);
-  box.scrollTop = box.scrollHeight;
+function aiMsg(type,who,text){
+  const box=document.getElementById('ai-msgs');
+  const d=document.createElement('div');
+  d.className='am '+type;
+  d.innerHTML=(who?`<span class="aw">${who}:</span>`:'')+`<span class="at">${text.replace(/\n/g,'<br>')}</span>`;
+  box.appendChild(d);box.scrollTop=box.scrollHeight;return d;
 }
 
-async function aiSend() {
-  const inp = document.getElementById('ai-inp');
-  const txt = inp.value.trim();
-  if (!txt || aiLoading) return;
-  inp.value = ''; inp.style.height = 'auto';
-  aiMsg('user', 'คุณ', txt);
-  aiHist[aiSel.id].push({ role:'user', content:txt });
-  aiLoading = true;
-  document.getElementById('ai-btn').disabled = true;
-
-  const box = document.getElementById('ai-msgs');
-  const ld = document.createElement('div');
-  ld.className = 'am bot';
-  ld.innerHTML = `<span class="aw">${aiSel.name}:</span><span class="at" id="ai-rt">...</span>`;
-  box.appendChild(ld); box.scrollTop = box.scrollHeight;
-
-  try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6', max_tokens: 1000,
-        system: aiSel.sys,
-        messages: aiHist[aiSel.id].slice(-8)
-      })
-    });
-    const data = await r.json();
-    if (data.error) throw new Error(data.error.message);
-    const rep = data.content?.[0]?.text || '(ไม่มีคำตอบ)';
-    aiHist[aiSel.id].push({ role:'assistant', content:rep });
-    document.getElementById('ai-rt').innerHTML = rep.replace(/
-/g,'<br>');
-  } catch(e) {
-    document.getElementById('ai-rt').textContent = '❌ ' + e.message;
-  }
-  aiLoading = false;
-  document.getElementById('ai-btn').disabled = false;
-  box.scrollTop = box.scrollHeight;
+async function gemini(sys,msgs,txt){
+  const key=aiGetKey();
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+  const contents=[];
+  for(const m of msgs.slice(-8)) contents.push({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]});
+  contents.push({role:'user',parts:[{text:txt}]});
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({system_instruction:{parts:[{text:sys}]},contents,generationConfig:{maxOutputTokens:800}})});
+  const data=await r.json();
+  if(data.error)throw new Error(data.error.message);
+  return data.candidates?.[0]?.content?.parts?.[0]?.text||'(ไม่มีคำตอบ)';
 }
 
-function aiDrop(e) { e.preventDefault(); document.getElementById('ai-drop').classList.remove('drag'); aiHandleFiles(e.dataTransfer.files); }
+async function aiSend(){
+  if(!aiGetKey()){aiMsg('sys','','⚠️ ใส่ API Key ก่อน แล้วกดบันทึก');return;}
+  const inp=document.getElementById('ai-inp');
+  const txt=inp.value.trim();
+  if(!txt||busy)return;
+  inp.value='';inp.style.height='auto';
+  aiMsg('user','คุณ',txt);
+  busy=true;document.getElementById('ai-send').disabled=true;
+  const box=document.getElementById('ai-msgs');
+  const ld=document.createElement('div');
+  ld.className='am bot';
+  ld.innerHTML=`<span class="aw">${sel.name}:</span><span class="at" id="ai-rt">...</span>`;
+  box.appendChild(ld);box.scrollTop=box.scrollHeight;
+  try{
+    const rep=await gemini(sel.sys,hist[sel.id],txt);
+    hist[sel.id].push({role:'user',content:txt},{role:'assistant',content:rep});
+    document.getElementById('ai-rt').innerHTML=rep.replace(/\n/g,'<br>');
+  }catch(e){document.getElementById('ai-rt').textContent='❌ '+e.message;}
+  busy=false;document.getElementById('ai-send').disabled=false;
+  box.scrollTop=box.scrollHeight;
+}
 
-async function aiHandleFiles(files) {
-  for (const f of files) {
-    if (!f.name.match(/\.xlsx?$/i)) continue;
-    const buf = await f.arrayBuffer();
-    const wb = XLSX.read(buf, {type:'array'});
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-    const flat = rows.slice(0,5).map(r=>r.join(' ')).join(' ');
+function aiDrop(e){e.preventDefault();document.getElementById('ai-drop').classList.remove('drag');aiHandleFiles(e.dataTransfer.files);}
 
-    // auto-detect ประเภทไฟล์
-    let type = 'general';
-    if (flat.includes('เบี้ยเลี้ยง') || flat.includes('ค่าประกอบ')) type = 'allowance';
-    else if (flat.includes('เงินเดือน') || flat.includes('ปลดประจำการ')) type = 'salary';
-
-    const agIdx = {salary:2, allowance:3, general:5}[type] ?? 5;
-    const ag = AI_AGENTS[agIdx];
-
-    // switch tab
-    aiSel = ag;
-    document.querySelectorAll('.agent-tab').forEach((b,j) => b.classList.toggle('active', j===agIdx));
-
-    aiMsg('sys', '', `📂 ${ag.name} รับไฟล์: ${f.name}`);
-    aiLoading = true; document.getElementById('ai-btn').disabled = true;
-
-    // ตรวจสอบข้อมูล
-    let result = { warnings: [], summary: {} };
-    if (type === 'salary') {
-      let warnings = [], count = 0, total = 0;
-      for (let i=2; i<rows.length; i++) {
-        const r = rows[i]; if (!r[0] || isNaN(r[0])) continue; count++;
-        total += parseFloat(r[31]||0);
-        const rel = String(r[24]||''), pay = String(r[32]||r[33]||'');
-        if (rel.length>=6 && pay.length>=6 && rel.substring(0,6) < pay.substring(0,6))
-          warnings.push(`${r[3]||''} ${r[4]||''}`.trim() + ` (ปลด${rel})`);
-      }
-      result = { warnings, summary: { count, total } };
-    } else if (type === 'allowance') {
-      let warnings = [], count = 0;
-      for (let i=2; i<rows.length; i++) {
-        const r = rows[i]; if (!r[0] || isNaN(r[0])) continue; count++;
-        if (+r[4] && +r[5] && Math.abs(+r[4]*+r[5] - +r[6]) > 1)
-          warnings.push(`${r[2]||''} ${r[3]||''}`.trim() + `: ${r[4]}×${r[5]}≠${r[6]}`);
-      }
-      result = { warnings, summary: { count } };
+async function aiHandleFiles(files){
+  if(!aiGetKey()){aiMsg('sys','','⚠️ ใส่ API Key ก่อน แล้วกดบันทึก');return;}
+  for(const f of files){
+    if(!f.name.match(/\.xlsx?$/i))continue;
+    const buf=await f.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    const flat=rows.slice(0,5).map(r=>r.join(' ')).join(' ');
+    let type='gen';
+    if(flat.includes('เบี้ยเลี้ยง')||flat.includes('ค่าประกอบ'))type='all';
+    else if(flat.includes('เงินเดือน')||flat.includes('ปลดประจำการ'))type='sal';
+    const ai=AG.find(a=>a.id===type)||AG[5];
+    sel=ai;
+    tabEl.querySelectorAll('.agent-tab').forEach((b,j)=>b.classList.toggle('active',AG[j]===ai));
+    aiMsg('sys','',`📂 ${ai.name} รับไฟล์: ${f.name}`);
+    let warns=[],count=0;
+    if(type==='sal'){
+      for(let i=2;i<rows.length;i++){const r=rows[i];if(!r[0]||isNaN(r[0]))continue;count++;
+        const rel=String(r[24]||''),pay=String(r[32]||r[33]||'');
+        if(rel.length>=6&&pay.length>=6&&rel.substring(0,6)<pay.substring(0,6))
+          warns.push(`${r[3]||''} ${r[4]||''}`.trim()+` (ปลด${rel})`);}
+    }else if(type==='all'){
+      for(let i=2;i<rows.length;i++){const r=rows[i];if(!r[0]||isNaN(r[0]))continue;count++;
+        if(+r[4]&&+r[5]&&Math.abs(+r[4]*+r[5]-+r[6])>1)
+          warns.push(`${r[2]||''} ${r[3]||''}`.trim()+`: ${r[4]}×${r[5]}≠${r[6]}`);}
     }
-
-    const wc = result.warnings.length;
-    const prompt = type==='salary'
-      ? `ตรวจไฟล์เงินเดือน: ${f.name}
-จำนวน ${result.summary.count} นาย
-${wc?'พบผิด:
-'+result.warnings.slice(0,5).join('
-'):'ไม่พบรายการผิด'}`
-      : type==='allowance'
-      ? `ตรวจไฟล์เบี้ยเลี้ยง: ${f.name}
-${wc?'พบตัวเลขไม่ตรง:
-'+result.warnings.slice(0,5).join('
-'):'ตัวเลขถูกต้องทุกราย'}`
-      : `วิเคราะห์ไฟล์: ${f.name} จำนวน ${rows.length} แถว`;
-
-    aiHist[ag.id].push({ role:'user', content:prompt });
-
-    const box = document.getElementById('ai-msgs');
-    const ld = document.createElement('div');
-    ld.className = 'am ' + (wc ? 'warn' : 'ok');
-    ld.innerHTML = `<span class="aw">${ag.name}:</span><span class="at" id="ai-frt">กำลังวิเคราะห์...</span>`;
-    box.appendChild(ld); box.scrollTop = box.scrollHeight;
-
-    try {
-      const r2 = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1000,
-          system: ag.sys, messages: aiHist[ag.id].slice(-6) })
-      });
-      const d2 = await r2.json();
-      if (d2.error) throw new Error(d2.error.message);
-      const rep = d2.content?.[0]?.text || 'ตรวจเสร็จแล้ว';
-      aiHist[ag.id].push({ role:'assistant', content:rep });
-      document.getElementById('ai-frt').innerHTML = rep.replace(/
-/g,'<br>');
-    } catch(e2) {
-      document.getElementById('ai-frt').textContent = '❌ ' + e2.message;
-    }
-    aiLoading = false; document.getElementById('ai-btn').disabled = false;
-    box.scrollTop = box.scrollHeight;
+    const wc=warns.length;
+    const prompt=type==='sal'
+      ?`ตรวจไฟล์เงินเดือน: ${f.name}\nจำนวน ${count} นาย\n${wc?'พบผิด '+wc+' ราย:\n'+warns.slice(0,5).join('\n'):'ไม่พบรายการผิด'}`
+      :type==='all'
+      ?`ตรวจไฟล์เบี้ยเลี้ยง: ${f.name}\nจำนวน ${count} นาย\n${wc?'พบไม่ตรง '+wc+' ราย:\n'+warns.slice(0,5).join('\n'):'ตัวเลขถูกต้องทุกราย'}`
+      :`วิเคราะห์ไฟล์: ${f.name}`;
+    busy=true;document.getElementById('ai-send').disabled=true;
+    const box=document.getElementById('ai-msgs');
+    const ld=document.createElement('div');
+    ld.className='am '+(wc?'warn':'ok');
+    ld.innerHTML=`<span class="aw">${ai.name}:</span><span class="at" id="ai-frt">กำลังวิเคราะห์...</span>`;
+    box.appendChild(ld);box.scrollTop=box.scrollHeight;
+    try{
+      const rep=await gemini(ai.sys,hist[ai.id],prompt);
+      hist[ai.id].push({role:'user',content:prompt},{role:'assistant',content:rep});
+      document.getElementById('ai-frt').innerHTML=rep.replace(/\n/g,'<br>');
+    }catch(e2){document.getElementById('ai-frt').textContent='❌ '+e2.message;}
+    busy=false;document.getElementById('ai-send').disabled=false;
+    box.scrollTop=box.scrollHeight;
   }
 }
 
-// init message
-aiMsg('sys', '', '🏢 AI พร้อมแล้ว — เลือก agent แล้วพิมพ์สั่งงาน หรือโยนไฟล์ Excel มาได้เลย');
+aiKeyStatus();
+aiMsg('sys','','🏢 AI พร้อมแล้ว — ใส่ Gemini Key ด้านบน แล้วโยนไฟล์ Excel หรือพิมพ์สั่งงาน');
 </script>
 
 </body>
