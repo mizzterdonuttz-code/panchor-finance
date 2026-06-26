@@ -276,11 +276,10 @@
   .ai-section { margin-bottom: 1.5rem; }
   .section-label { font-size: 13px; font-weight: 600; color: #999; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 12px; }
 
-  .ai-key-row { display:flex; gap:8px; margin-bottom:10px; align-items:center; }
+  .ai-key-row { display:flex; gap:8px; margin-bottom:6px; align-items:center; }
   .ai-key-row input {
     flex:1; border:1.5px solid #ddd; border-radius:8px; padding:6px 10px;
-    font-size:12px; font-family:'Sarabun',sans-serif; outline:none; color:#333;
-    background:#fff;
+    font-size:12px; font-family:'Sarabun',sans-serif; outline:none; color:#333; background:#fff;
   }
   .ai-key-row input:focus { border-color:#185fa5; }
   .ai-key-row button {
@@ -289,7 +288,9 @@
     font-family:'Sarabun',sans-serif; white-space:nowrap;
   }
   .ai-key-row button:hover { background:#185fa5; color:#fff; }
-  .ai-key-status { font-size:11px; color:#aaa; margin-bottom:8px; }
+  .ai-key-hint { font-size:11px; color:#aaa; margin-bottom:8px; }
+  .ai-key-hint a { color:#185fa5; }
+  .ai-key-status { font-size:11px; color:#aaa; margin-bottom:10px; }
   .ai-key-status.ok { color:#0f6e56; }
 
   .agent-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
@@ -351,6 +352,7 @@
     #ai-inp { background:#1e1e1e; border-color:#333; color:#ddd; }
     #ai-inp:focus { border-color:#5aabf5; }
     .ai-key-row input { background:#1e1e1e; border-color:#333; color:#ddd; }
+    .ai-key-hint a { color:#5aabf5; }
   }
 
 </style>
