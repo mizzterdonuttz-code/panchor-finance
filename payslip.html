@@ -1776,13 +1776,15 @@ function updateBia(sid, field, val, ym, p){
   // จำตำแหน่ง focus ไว้ก่อน re-render
   const active=document.activeElement;
   let focusInfo=null;
-  if(active && active.tagName==='INPUT'){
-    const rows=Array.from(document.getElementById('biaBody').querySelectorAll('tr'));
+  if(active && active.tagName==='INPUT' && active.closest('#biaBody')){
     const tr=active.closest('tr');
-    const rowIdx=rows.indexOf(tr);
-    const cellInputs=Array.from(tr.querySelectorAll('input'));
-    const colIdx=cellInputs.indexOf(active);
-    focusInfo={rowIdx,colIdx,selStart:active.selectionStart,selEnd:active.selectionEnd};
+    if(tr){
+      const rows=Array.from(document.getElementById('biaBody').querySelectorAll('tr'));
+      const rowIdx=rows.indexOf(tr);
+      const cellInputs=Array.from(tr.querySelectorAll('input'));
+      const colIdx=cellInputs.indexOf(active);
+      focusInfo={rowIdx,colIdx,selStart:active.selectionStart,selEnd:active.selectionEnd};
+    }
   }
   // re-render ทั้งตาราง summary row จะอัปเดตเรียลไทม์
   loadBiaData();
